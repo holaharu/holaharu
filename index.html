@@ -1,10 +1,1337 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+
+<html lang="ko">
+
 <head>
-  <meta charset="utf-8">
-  <title>TXT Reader</title>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>TXT를 책으로</title>
+
+  <style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Pretendard:wght@400;500;600;700&display=swap');
+
+
+
+    :root {
+
+      --bg: #f6f7f8;
+
+      --panel: #ffffff;
+
+      --panel-2: #fbfbfc;
+
+      --text: #2f3440;
+
+      --muted: #7e8694;
+
+      --border: #e3e7ee;
+
+      --line: #d7dde7;
+
+      --accent: #576273;
+
+      --accent-soft: #eef2f7;
+
+      --shadow: 0 18px 40px rgba(27, 39, 56, 0.07);
+
+      --reader-width: 820px;
+
+      --font-size: 17px;
+
+      --line-height: 1.88;
+
+      --page-height: 72vh;
+
+      --ui-font: "Pretendard", "Apple SD Gothic Neo", sans-serif;
+
+      --body-font: "Noto Serif KR", Georgia, serif;
+
+    }
+
+
+
+    body.dark {
+
+      --bg: #16181c;
+
+      --panel: #1d2127;
+
+      --panel-2: #20252c;
+
+      --text: #ebeef4;
+
+      --muted: #a4acb8;
+
+      --border: #2b313a;
+
+      --line: #39414d;
+
+      --accent: #cdd6e2;
+
+      --accent-soft: #252b34;
+
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+
+    }
+
+
+
+    body.sepia {
+
+      --bg: #f6f7f8;
+
+      --panel: #ffffff;
+
+      --panel-2: #fbfbfc;
+
+      --text: #2f3440;
+
+      --muted: #7e8694;
+
+      --border: #e3e7ee;
+
+      --line: #d7dde7;
+
+      --accent: #576273;
+
+      --accent-soft: #eef2f7;
+
+      --shadow: 0 18px 40px rgba(27, 39, 56, 0.07);
+
+    }
+
+
+
+    * { box-sizing: border-box; }
+
+
+
+    body {
+
+      margin: 0;
+
+      font-family: var(--ui-font);
+
+      background:
+
+        linear-gradient(180deg, rgba(255,255,255,0.85), rgba(246,247,248,0.95)),
+
+        repeating-linear-gradient(90deg, transparent 0 39px, rgba(120,130,145,0.02) 39px 40px);
+
+      color: var(--text);
+
+    }
+
+
+
+    .app {
+
+      min-height: 100vh;
+
+      display: grid;
+
+      grid-template-rows: auto 1fr auto;
+
+    }
+
+
+
+    .topbar {
+
+      position: sticky;
+
+      top: 0;
+
+      z-index: 10;
+
+      background: rgba(246, 247, 248, 0.82);
+
+      backdrop-filter: blur(14px);
+
+      border-bottom: 1px solid var(--border);
+
+      padding: 14px 18px;
+
+    }
+
+
+
+    .toolbar {
+
+      max-width: 1260px;
+
+      margin: 0 auto;
+
+      display: flex;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+      align-items: center;
+
+    }
+
+
+
+    .toolbar > * {
+
+      min-height: 40px;
+
+    }
+
+
+
+    .file-label, button, select, input[type="text"], input[type="range"] {
+
+      border: 1px solid var(--border);
+
+      background: rgba(255,255,255,0.94);
+
+      color: var(--text);
+
+      border-radius: 12px;
+
+      padding: 9px 12px;
+
+      font-size: 13px;
+
+      font-family: var(--ui-font);
+
+      transition: 0.18s ease;
+
+    }
+
+
+
+    .file-label, button {
+
+      cursor: pointer;
+
+    }
+
+
+
+    button:hover, .file-label:hover, select:hover, input[type="text"]:hover {
+
+      border-color: var(--accent);
+
+      background: #ffffff;
+
+      transform: translateY(-1px);
+
+    }
+
+
+
+    input[type="text"]:focus, select:focus {
+
+      outline: none;
+
+      border-color: var(--accent);
+
+      box-shadow: 0 0 0 4px rgba(87, 98, 115, 0.08);
+
+    }
+
+
+
+    #fileInput {
+
+      display: none;
+
+    }
+
+
+
+    .grow {
+
+      flex: 1 1 220px;
+
+    }
+
+
+
+    .stats {
+
+      color: var(--muted);
+
+      font-size: 12px;
+
+      margin-left: auto;
+
+      white-space: nowrap;
+
+      letter-spacing: 0.02em;
+
+    }
+
+
+
+    .main {
+
+      padding: 28px 16px 22px;
+
+    }
+
+
+
+    .reader-shell {
+
+      max-width: calc(var(--reader-width) + 140px);
+
+      margin: 0 auto;
+
+    }
+
+
+
+    .title-box {
+
+      max-width: var(--reader-width);
+
+      margin: 0 auto 14px;
+
+      color: var(--muted);
+
+      font-size: 12px;
+
+      letter-spacing: 0.12em;
+
+      text-transform: uppercase;
+
+      padding: 0 6px;
+
+    }
+
+
+
+    .reader {
+
+      width: 100%;
+
+      max-width: var(--reader-width);
+
+      height: var(--page-height);
+
+      margin: 0 auto;
+
+      background: linear-gradient(180deg, #ffffff, var(--panel-2));
+
+      border: 1px solid var(--border);
+
+      border-radius: 24px;
+
+      box-shadow: var(--shadow);
+
+      overflow: auto;
+
+      padding: 42px 48px 52px;
+
+      position: relative;
+
+      font-size: var(--font-size);
+
+      line-height: var(--line-height);
+
+      white-space: normal;
+
+      word-break: keep-all;
+
+    }
+
+
+
+    .reader::before {
+
+      content: "";
+
+      position: absolute;
+
+      inset: 18px;
+
+      border: 1px solid rgba(215, 221, 231, 0.72);
+
+      border-radius: 18px;
+
+      pointer-events: none;
+
+    }
+
+
+
+    .drop-overlay {
+
+      position: absolute;
+
+      inset: 20px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      background: rgba(255,255,255,0.92);
+
+      border: 1.5px dashed var(--accent);
+
+      color: var(--accent);
+
+      font-size: 20px;
+
+      font-family: var(--ui-font);
+
+      letter-spacing: 0.04em;
+
+      border-radius: 18px;
+
+      z-index: 3;
+
+      pointer-events: none;
+
+    }
+
+
+
+    .reader.dragover {
+
+      outline: 3px solid rgba(87, 98, 115, 0.12);
+
+      outline-offset: 5px;
+
+    }
+
+
+
+    .reader.empty {
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      text-align: center;
+
+      color: var(--muted);
+
+    }
+
+
+
+    .content {
+
+      max-width: 100%;
+
+      position: relative;
+
+      z-index: 1;
+
+    }
+
+
+
+    .para {
+
+      margin: 0 0 0.95em;
+
+      font-family: var(--body-font);
+
+      letter-spacing: -0.015em;
+
+      text-align: left;
+
+    }
+
+
+
+    .para + .para {
+
+      text-indent: 0;
+
+    }
+
+
+
+    .speaker {
+
+      font-family: var(--ui-font);
+
+      font-weight: 600;
+
+      color: var(--accent);
+
+      letter-spacing: 0.01em;
+
+    }
+
+
+
+    .meta {
+
+      font-family: var(--ui-font);
+
+      font-size: 0.82em;
+
+      color: var(--muted);
+
+      letter-spacing: 0.06em;
+
+      text-transform: uppercase;
+
+    }
+
+
+
+    .search-hit {
+
+      background: #eaf1ff;
+
+      border-radius: 4px;
+
+      padding: 0 1px;
+
+    }
+
+
+
+    .footer {
+
+      border-top: 1px solid var(--border);
+
+      padding: 14px 18px 18px;
+
+      background: rgba(246, 247, 248, 0.82);
+
+    }
+
+
+
+    .pager {
+
+      max-width: 860px;
+
+      margin: 0 auto;
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+    }
+
+
+
+    .page-indicator {
+
+      min-width: 140px;
+
+      text-align: center;
+
+      font-size: 12px;
+
+      color: var(--muted);
+
+      letter-spacing: 0.12em;
+
+    }
+
+
+
+    .hint {
+
+      max-width: var(--reader-width);
+
+      margin: 12px auto 0;
+
+      color: var(--muted);
+
+      font-size: 12px;
+
+      text-align: center;
+
+    }
+
+
+
+    @media (max-width: 700px) {
+
+      .reader {
+
+        padding: 26px 22px 30px;
+
+        border-radius: 18px;
+
+      }
+
+
+
+      .reader::before {
+
+        inset: 12px;
+
+        border-radius: 12px;
+
+      }
+
+
+
+      .stats {
+
+        width: 100%;
+
+        margin-left: 0;
+
+      }
+
+    }
+
+
+
+    @media print {
+
+      .topbar, .footer, .hint { display: none !important; }
+
+      body, .app, .main { background: white !important; }
+
+      .reader-shell, .reader {
+
+        max-width: none !important;
+
+        width: 100% !important;
+
+        height: auto !important;
+
+        overflow: visible !important;
+
+        border: none !important;
+
+        box-shadow: none !important;
+
+        padding: 0 !important;
+
+      }
+
+      .reader::before { display: none !important; }
+
+      .para {
+
+        break-inside: avoid;
+
+        page-break-inside: avoid;
+
+      }
+
+    }
+
+  </style>
+
 </head>
-<body>
-  hello
+
+<body class="light">
+
+  <div class="app">
+
+    <div class="topbar">
+
+      <div class="toolbar">
+
+        <label class="file-label" for="fileInput">TXT 놓기</label>
+
+        <button id="printPdfBtn" type="button">PDF 저장</button>
+
+        <input id="fileInput" type="file" accept=".txt" />
+
+
+
+        <button id="loadSampleBtn" type="button">예시 불러오기</button>
+
+        <button id="saveBookmarkBtn" type="button">북마크 저장</button>
+
+        <button id="goBookmarkBtn" type="button">북마크 이동</button>
+
+
+
+        <input id="searchInput" class="grow" type="text" placeholder="검색어 입력" />
+
+
+
+        <select id="themeSelect" aria-label="테마 선택">
+
+          <option value="light">화이트</option>
+
+          <option value="dark">다크</option>
+
+          <option value="sepia">소프트 그레이</option>
+
+        </select>
+
+
+
+        <label>글자 <input id="fontRange" type="range" min="15" max="28" value="19" /></label>
+
+        <label>줄간격 <input id="lineRange" type="range" min="1.5" max="2.4" step="0.05" value="1.95" /></label>
+
+
+
+        <div class="stats" id="stats">파일 없음</div>
+
+      </div>
+
+    </div>
+
+
+
+    <main class="main">
+
+      <div class="reader-shell">
+
+        <div class="title-box" id="titleBox">TEXT READER</div>
+
+        <section class="reader empty" id="reader">
+
+          <div class="drop-overlay" id="dropOverlay" hidden>파일을 여기에 놓기</div>
+
+          <div>
+
+            <div style="font-size:18px; margin-bottom:8px;">TXT 파일을 올리면 페이지로 읽을수 있어요</div>
+
+            <div style="font-size:14px;">줄바꿈 기준으로 문단을 나누고, 긴 파일은 자동으로 여러 페이지로 분할함</div>
+
+          </div>
+
+        </section>
+
+        <div class="hint">← → 방향키로 페이지 이동 가능 / 설정과 북마크는 브라우저에 자동 저장됨</div>
+
+      </div>
+
+    </main>
+
+
+
+    <div class="footer">
+
+      <div class="pager">
+
+        <button id="prevBtn" type="button">이전 페이지</button>
+
+        <div class="page-indicator" id="pageIndicator">0 / 0</div>
+
+        <button id="nextBtn" type="button">다음 페이지</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <script>
+
+    const STORAGE_KEY = 'txtEbookReaderState_v1';
+
+
+
+    const els = {
+
+      body: document.body,
+
+      fileInput: document.getElementById('fileInput'),
+
+      reader: document.getElementById('reader'),
+
+      titleBox: document.getElementById('titleBox'),
+
+      stats: document.getElementById('stats'),
+
+      pageIndicator: document.getElementById('pageIndicator'),
+
+      prevBtn: document.getElementById('prevBtn'),
+
+      nextBtn: document.getElementById('nextBtn'),
+
+      searchInput: document.getElementById('searchInput'),
+
+      themeSelect: document.getElementById('themeSelect'),
+
+      fontRange: document.getElementById('fontRange'),
+
+      lineRange: document.getElementById('lineRange'),
+
+      saveBookmarkBtn: document.getElementById('saveBookmarkBtn'),
+
+      goBookmarkBtn: document.getElementById('goBookmarkBtn'),
+
+      loadSampleBtn: document.getElementById('loadSampleBtn'),
+
+      printPdfBtn: document.getElementById('printPdfBtn'),
+
+      dropOverlay: document.getElementById('dropOverlay')
+
+    };
+
+
+
+    const state = {
+
+      fileName: '',
+
+      text: '',
+
+      paragraphs: [],
+
+      pages: [],
+
+      currentPage: 0,
+
+      searchTerm: '',
+
+      bookmark: 0,
+
+      theme: '
+
+      fontSize: 19,
+
+      lineHeight: 1.95
+
+    };
+
+
+
+    function escapeHtml(str) {
+
+      return str
+
+        .replaceAll('&', '&')
+
+        .replaceAll('<', '<')
+
+        .replaceAll('>', '>')
+
+        .replaceAll('"', '"')
+
+        .replaceAll("'", ''');
+
+    }
+
+
+
+    function loadSavedState() {
+
+      try {
+
+        const raw = localStorage.getItem(STORAGE_KEY);
+
+        if (!raw) return;
+
+        const saved = JSON.parse(raw);
+
+        Object.assign(state, saved);
+
+      } catch (e) {
+
+        console.error(e);
+
+      }
+
+    }
+
+
+
+    function saveState() {
+
+      const savable = {
+
+        fileName: state.fileName,
+
+        text: state.text,
+
+        paragraphs: state.paragraphs,
+
+        pages: state.pages,
+
+        currentPage: state.currentPage,
+
+        searchTerm: state.searchTerm,
+
+        bookmark: state.bookmark,
+
+        theme: state.theme,
+
+        fontSize: state.fontSize,
+
+        lineHeight: state.lineHeight
+
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savable));
+
+    }
+
+
+
+    function applyTheme() {
+
+      els.body.classList.remove('light', 'dark', 'sepia');
+
+      els.body.classList.add(state.theme);
+
+      if (state.theme === 'light') els.body.classList.add('light');
+
+      document.documentElement.style.setProperty('--font-size', state.fontSize + 'px');
+
+      document.documentElement.style.setProperty('--line-height', state.lineHeight);
+
+      els.themeSelect.value = state.theme;
+
+      els.fontRange.value = state.fontSize;
+
+      els.lineRange.value = state.lineHeight;
+
+    }
+
+
+
+    function splitIntoParagraphs(text) {
+
+      return text
+
+        .replace(/\r\n/g, '\n')
+
+        .replace(/\r/g, '\n')
+
+        .split(/\n{2,}/)
+
+        .map(block => block.trim())
+
+        .filter(Boolean)
+
+        .flatMap(block => {
+
+          const lines = block.split('\n').map(v => v.trim()).filter(Boolean);
+
+          if (lines.length <= 1) return lines;
+
+          return [lines.join(' ')];
+
+        });
+
+    }
+
+
+
+    function classifyParagraph(line) {
+
+      if (/^\[.*\]$/.test(line) || /^<!--.*-->$/.test(line)) {
+
+        return { type: 'meta', text: line };
+
+      }
+
+      const speakerMatch = line.match(/^([^:\n]{1,30}):\s+(.+)$/);
+
+      if (speakerMatch) {
+
+        return { type: 'dialogue', speaker: speakerMatch[1], text: speakerMatch[2] };
+
+      }
+
+      return { type: 'normal', text: line };
+
+    }
+
+
+
+    function paginateParagraphs(paragraphs) {
+
+      const approxCharsPerPage = Math.max(900, Math.floor((760 / state.fontSize) * 520 / state.lineHeight));
+
+      const pages = [];
+
+      let current = [];
+
+      let count = 0;
+
+
+
+      for (const p of paragraphs) {
+
+        const len = p.text.length + (p.speaker ? p.speaker.length : 0) + 20;
+
+        if (count + len > approxCharsPerPage && current.length) {
+
+          pages.push(current);
+
+          current = [];
+
+          count = 0;
+
+        }
+
+        current.push(p);
+
+        count += len;
+
+      }
+
+      if (current.length) pages.push(current);
+
+      return pages;
+
+    }
+
+
+
+    function highlight(text, term) {
+
+      const safe = escapeHtml(text);
+
+      if (!term) return safe;
+
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const regex = new RegExp(`(${escaped})`, 'gi');
+
+      return safe.replace(regex, '<mark class="search-hit">$1</mark>');
+
+    }
+
+
+
+    function renderPage() {
+
+      if (!state.pages.length) {
+
+        els.reader.classList.add('empty');
+
+        els.reader.innerHTML = '<div><div style="font-size:18px; margin-bottom:8px;">TXT 파일을 올리면 페이지처럼 읽을 수 있어요</div><div style="font-size:14px;">줄바꿈 기준으로 문단을 나누고, 긴 파일은 자동으로 여러 페이지로 분할함</div></div>';
+
+        els.pageIndicator.textContent = '0 / 0';
+
+        els.stats.textContent = '파일 없음';
+
+        return;
+
+      }
+
+
+
+      els.reader.classList.remove('empty');
+
+      const page = state.pages[state.currentPage] || [];
+
+      const html = page.map(item => {
+
+        if (item.type === 'meta') {
+
+          return `<p class="para meta">${highlight(item.text, state.searchTerm)}</p>`;
+
+        }
+
+        if (item.type === 'dialogue') {
+
+          return `<p class="para"><span class="speaker">${escapeHtml(item.speaker)}:</span> ${highlight(item.text, state.searchTerm)}</p>`;
+
+        }
+
+        return `<p class="para">${highlight(item.text, state.searchTerm)}</p>`;
+
+      }).join('');
+
+
+
+      els.reader.innerHTML = `<div class="content">${html}</div>`;
+
+      els.pageIndicator.textContent = `${state.currentPage + 1} / ${state.pages.length}`;
+
+      els.titleBox.textContent = state.fileName || '불러온 텍스트';
+
+      els.stats.textContent = `문단 ${state.paragraphs.length}개 · 페이지 ${state.pages.length}개`;
+
+      els.reader.scrollTop = 0;
+
+      saveState();
+
+    }
+
+
+
+    function rebuildPages(keepPage = true) {
+
+      const prev = state.currentPage;
+
+      state.pages = paginateParagraphs(state.paragraphs);
+
+      if (!keepPage) {
+
+        state.currentPage = 0;
+
+      } else {
+
+        state.currentPage = Math.min(prev, Math.max(0, state.pages.length - 1));
+
+      }
+
+      renderPage();
+
+    }
+
+
+
+    function ingestText(text, fileName = '불러온 텍스트') {
+
+      state.fileName = fileName;
+
+      state.text = text;
+
+      state.paragraphs = splitIntoParagraphs(text).map(classifyParagraph);
+
+      state.currentPage = 0;
+
+      rebuildPages(false);
+
+    }
+
+
+
+    function goPage(next) {
+
+      if (!state.pages.length) return;
+
+      state.currentPage = Math.min(Math.max(0, next), state.pages.length - 1);
+
+      renderPage();
+
+    }
+
+
+
+    function findFirstPageWithTerm(term) {
+
+      if (!term) return 0;
+
+      const lower = term.toLowerCase();
+
+      for (let i = 0; i < state.pages.length; i++) {
+
+        const joined = state.pages[i].map(p => `${p.speaker || ''} ${p.text}`).join(' ').toLowerCase();
+
+        if (joined.includes(lower)) return i;
+
+      }
+
+      return 0;
+
+    }
+
+
+
+    els.fileInput.addEventListener('change', (e) => {
+
+      const file = e.target.files?.[0];
+
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = () => ingestText(String(reader.result || ''), file.name);
+
+      reader.readAsText(file, 'utf-8');
+
+    });
+
+
+
+    els.prevBtn.addEventListener('click', () => goPage(state.currentPage - 1));
+
+    els.nextBtn.addEventListener('click', () => goPage(state.currentPage + 1));
+
+
+
+    els.searchInput.addEventListener('input', (e) => {
+
+      state.searchTerm = e.target.value.trim();
+
+      if (state.searchTerm) state.currentPage = findFirstPageWithTerm(state.searchTerm);
+
+      renderPage();
+
+    });
+
+
+
+    els.themeSelect.addEventListener('change', (e) => {
+
+      state.theme = e.target.value;
+
+      applyTheme();
+
+      saveState();
+
+    });
+
+
+
+    els.fontRange.addEventListener('input', (e) => {
+
+      state.fontSize = Number(e.target.value);
+
+      applyTheme();
+
+      rebuildPages(true);
+
+    });
+
+
+
+    els.lineRange.addEventListener('input', (e) => {
+
+      state.lineHeight = Number(e.target.value);
+
+      applyTheme();
+
+      rebuildPages(true);
+
+    });
+
+
+
+    els.saveBookmarkBtn.addEventListener('click', () => {
+
+      state.bookmark = state.currentPage;
+
+      saveState();
+
+      alert(`북마크 저장 완료: ${state.currentPage + 1}페이지`);
+
+    });
+
+
+
+    els.goBookmarkBtn.addEventListener('click', () => {
+
+      if (!state.pages.length) return;
+
+      goPage(Math.min(state.bookmark || 0, state.pages.length - 1));
+
+    });
+
+
+
+    els.loadSampleBtn.addEventListener('click', () => {
+
+      const sample = `[2026-03-11 11:20]\nHarlan: Are you okay?\nLucy: I am fine. Just tired.\n\nThe truck idled beneath the pale afternoon light. The air smelled faintly of dust, coffee, and the dog sleeping between them.\n\n[System]\nSearch, bookmark, theme, and pagination are all working in this sample file.\n\nLucy looked out the window for a long moment before speaking again.\n\nLucy: It feels strange.\nHarlan: Strange can still be safe.`;
+
+      ingestText(sample, 'sample.txt');
+
+    });
+
+
+
+    window.addEventListener('keydown', (e) => {
+
+      if (e.key === 'ArrowLeft') goPage(state.currentPage - 1);
+
+      if (e.key === 'ArrowRight') goPage(state.currentPage + 1);
+
+    });
+
+
+
+    els.printPdfBtn.addEventListener('click', () => {
+
+      if (!state.pages.length) {
+
+        alert('먼저 TXT 파일을 불러와야 함');
+
+        return;
+
+      }
+
+      window.print();
+
+    });
+
+
+
+    ['dragenter', 'dragover'].forEach(type => {
+
+      window.addEventListener(type, (e) => {
+
+        e.preventDefault();
+
+        els.reader.classList.add('dragover');
+
+        els.dropOverlay.hidden = false;
+
+      });
+
+    });
+
+
+
+    ['dragleave', 'drop'].forEach(type => {
+
+      window.addEventListener(type, (e) => {
+
+        e.preventDefault();
+
+        if (type === 'drop') {
+
+          const file = e.dataTransfer?.files?.[0];
+
+          if (file && file.name.toLowerCase().endsWith('.txt')) {
+
+            const reader = new FileReader();
+
+            reader.onload = () => ingestText(String(reader.result || ''), file.name);
+
+            reader.readAsText(file, 'utf-8');
+
+          }
+
+        }
+
+        els.reader.classList.remove('dragover');
+
+        els.dropOverlay.hidden = true;
+
+      });
+
+    });
+
+
+
+    loadSavedState();
+
+    applyTheme();
+
+    els.searchInput.value = state.searchTerm || '';
+
+    if (state.text && state.paragraphs.length) {
+
+      renderPage();
+
+    } else {
+
+      renderPage();
+
+    }
+
+  </script>
+
 </body>
+
 </html>
