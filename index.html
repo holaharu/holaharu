@@ -3,293 +3,353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Re-Book v2.0 | Professional Novel Viewer</title>
+    <title>고품격 웹 소설 리더 & PDF 변환기</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&family=Noto+Serif+KR:wght@300;400;700&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+    
     <style>
-        /* 1. 디자인 코어 시스템 */
+        /* 1. 디자인 변수 정의 */
         :root {
-            --primary-bg: #FFF3DD;
-            --secondary-bg: #FAF6F0;
-            --accent-blue: #4A6572;
-            --text-main: #333333;
-            --text-dim: #666666;
-            --dialogue-bg: rgba(74, 101, 114, 0.08); /* 대사 하이라이트 배경 */
-            --dialogue-text: #2C3E50;
-            --border-color: #3C4043;
-            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --bg-viewer: #FDFCF0; /* 교보문고 이북 미색 감성 */
+            --text-viewer: #2B2B2B;
+            --bg-ui: #f8f9fa;
+            --text-ui: #333333;
+            --border-ui: #e0e0e0;
+            --accent-color: #4A6572;
+            --dialogue-bg: rgba(74, 101, 114, 0.06);
+            --dialogue-text: #1A252C;
+        }
+
+        /* 밝은톤 테마 */
+        body.theme-white { --bg-viewer: #ffffff; --text-viewer: #111111; --dialogue-bg: #f1f3f5; }
+        /* 세피아 테마 */
+        body.theme-sepia { --bg-viewer: #f4ecd8; --text-viewer: #5b4636; --dialogue-bg: rgba(91, 70, 54, 0.07); }
+        /* 다크 테마 */
+        body.theme-dark {
+            --bg-viewer: #1e1e1e; --text-viewer: #d4d4d4;
+            --bg-ui: #2d2d2d; --text-ui: #f5f5f5; --border-ui: #444444;
+            --dialogue-bg: rgba(255,255,255,0.08); --dialogue-text: #ffffff;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
-            background-color: #E2E8F0;
-            display: grid;
-            place-items: center;
-            min-height: 100vh;
-            font-family: 'Arimo', sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* 뷰어 전체 컨테이너 */
-        .slide-container {
-            width: 100%;
-            max-width: 1280px;
-            height: 90vh;
-            background-color: var(--primary-bg);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            position: relative;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-ui);
+            color: var(--text-ui);
+            display: flex;
+            height: 100vh;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            padding: 40px;
-            border-radius: 8px;
         }
 
-        /* 2. 상단 바 */
-        .header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 15px;
+        /* 2. 초기 업로드 대기 화면 (Dropzone) */
+        #upload-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #FDFCF0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100;
+            transition: opacity 0.3s ease;
         }
-
-        .header-bar h1 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -1px;
-            color: var(--accent-blue);
-        }
-
-        .nav-controls {
-            display: flex;
-            gap: 15px;
-        }
-
-        .btn-mini {
-            padding: 8px 16px;
-            border: 1px solid var(--border-color);
-            background: transparent;
-            font-family: 'Poppins', sans-serif;
-            font-size: 12px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-mini:hover {
-            background: var(--accent-blue);
-            color: white;
-        }
-
-        /* 3. 업로드 뷰 (초기 화면) */
-        #upload-view {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            gap: 30px;
-        }
-
         .dropzone {
-            width: 100%;
-            max-width: 600px;
-            height: 300px;
-            border: 2px dashed var(--border-color);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.4);
-            cursor: pointer;
-            transition: var(--transition);
+            width: 90%; max-width: 600px; height: 320px;
+            border: 3px dashed #4A6572; border-radius: 12px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s;
+        }
+        .dropzone:hover, .dropzone.drag-active {
+            background: rgba(74, 101, 114, 0.1); transform: scale(1.01);
+        }
+        .dropzone i { font-size: 64px; color: var(--accent-color); margin-bottom: 20px; }
+        .dropzone p { font-size: 18px; font-weight: 500; color: #4A6572; text-align: center; line-height: 1.6; }
+
+        /* 3. 메인 레이아웃 (파일 업로드 후 노출) */
+        #main-layout { display: none; width: 100%; height: 100%; }
+        
+        /* 왼쪽 사이드바 설정 영역 */
+        .sidebar {
+            width: 340px; background-color: var(--bg-ui); border-right: 1px solid var(--border-ui);
+            padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
+        }
+        .sidebar h2 {
+            font-size: 15px; font-weight: 700; color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color); padding-bottom: 6px; margin-bottom: 10px;
+        }
+        .control-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+        .control-group label { font-size: 12px; font-weight: 600; opacity: 0.8; }
+        
+        /* 버튼 스타일 */
+        button, label.file-change-label {
+            background-color: #ffffff; color: #333333; border: 1px solid var(--border-ui);
+            padding: 10px; font-size: 13px; font-weight: 500; border-radius: 6px;
+            cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        button:hover, label.file-change-label:hover { background-color: #eee; }
+        .btn-primary { background-color: var(--accent-color) !important; color: white !important; font-weight: 600; border: none; }
+        .btn-primary:hover { opacity: 0.9; }
+        
+        /* 테마/글자 크기 그리드 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+
+        /* 커스텀 치환 규칙 리스트 스타일 */
+        .rule-row { display: flex; gap: 4px; margin-bottom: 4px; }
+        .rule-row input {
+            width: 45%; padding: 6px; border: 1px solid var(--border-ui);
+            border-radius: 4px; font-size: 12px; background: #fff; color: #333;
+        }
+        .btn-del-rule { width: 10%; padding: 6px; background: #ffebee; color: #c62828; border: none; border-radius: 4px; cursor: pointer; }
+
+        /* 오른쪽 이북 뷰어 본문 */
+        .viewer-master { flex: 1; overflow-y: auto; padding: 40px 20px; display: flex; justify-content: center; background-color: #e9ecef; }
+        body.theme-dark .viewer-master { background-color: #121212; }
+        
+        #viewer-container {
+            background-color: var(--bg-viewer); color: var(--text-viewer);
+            width: 100%; max-width: 760px; min-height: 100%;
+            padding: 60px 50px; box-shadow: 0 4px 25px rgba(0,0,0,0.07); border-radius: 4px;
+            
+            /* 교보문고 이북 가독성 표준 */
+            font-family: 'Noto Serif KR', serif; font-size: 16px; line-height: 1.9;
+            text-align: justify; word-break: keep-all; white-space: pre-wrap;
         }
 
-        .dropzone.drag-active {
-            background: rgba(74, 101, 114, 0.1);
-            transform: scale(1.02);
-        }
-
-        /* 4. 리더 뷰 (소설 감상 모드) */
-        #reader-view {
-            display: none; /* 초기엔 숨김 */
-            flex-grow: 1;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        #viewer-content {
-            background-color: var(--secondary-bg);
-            border: 1px solid var(--border-color);
-            padding: 60px;
-            overflow-y: auto;
-            flex-grow: 1;
-            font-family: 'Noto Serif KR', serif;
-            font-size: 18px;
-            line-height: 1.8;
-            color: var(--text-main);
-            text-align: justify;
-            white-space: pre-wrap;
-        }
-
-        /* 5. 대사 하이라이트 스타일 */
-        .dialogue {
+        /* 4. 대사 하이라이트/말풍선 스타일 (toast14 핵심 스타일 차용) */
+        .dialogue-line {
             background-color: var(--dialogue-bg);
             color: var(--dialogue-text);
-            padding: 2px 4px;
-            border-radius: 4px;
-            font-weight: 400;
+            padding: 4px 10px;
+            margin: 6px 0;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-color);
+            display: block;
         }
 
-        /* 6. PDF 출력 전용 스타일 (잘림 방지) */
+        /* 5. 🖨️ PDF 인쇄 전용 CSS (이 속성 덕분에 절대 안 깨지고 이북 책자처럼 나옵니다) */
         @media print {
-            .btn-mini, .header-bar, .sidebar { display: none !important; }
-            #viewer-content {
-                width: 100%;
-                height: auto;
-                padding: 0;
-                border: none;
-                background: white;
+            body { background: white !important; color: black !important; height: auto !important; overflow: visible !important; }
+            .sidebar { display: none !important; } /* 메뉴 숨김 */
+            .viewer-master { padding: 0 !important; background: white !important; overflow: visible !important; height: auto !important; }
+            #viewer-container {
+                box-shadow: none !important; padding: 0 !important; max-width: 100% !important; 
+                width: 100% !important; background: white !important; color: black !important;
             }
-            .novel-section {
+            /* 페이지가 넘어갈 때 글자 중간이 가로로 쪼개져서 인쇄되는 현상 방지 */
+            .novel-paragraph {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
+                margin-bottom: 12px;
             }
+            .dialogue-line { background: #f8f9fa !important; border-left: 3px solid #333 !important; color: #000 !important; }
         }
     </style>
 </head>
 <body>
 
-<div class="slide-container" id="main-slide">
-    <div class="header-bar">
-        <h1>RE-BOOK <span style="font-weight:300">V2.0</span></h1>
-        <div class="nav-controls" id="viewer-nav" style="display:none;">
-            <button class="btn-mini" onclick="resetViewer()">파일 교체</button>
-            <button class="btn-mini" onclick="cleanText()">태그 싹 지우기</button>
-            <button class="btn-mini" onclick="exportPDF()" style="background:var(--accent-blue); color:white; border:none;">PDF 저장</button>
-        </div>
-    </div>
-
-    <div id="upload-view">
-        <h2 style="font-family:'Poppins'; font-size:32px; margin-bottom:10px;">텍스트 파일을 올려주세요</h2>
-        
+    <div id="upload-container">
         <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-            <p style="font-family:'Poppins'; font-weight:500; font-size:18px;">클릭하거나 파일을 드래그해서 놓으세요 (.txt)</p>
+            <i class="fa-solid fa-book-open"></i>
+            <p><strong>TXT 소설 파일을 이곳에 드래그하거나 클릭하세요.</strong><br><span style="font-size:14px; color:#777; font-weight:normal;">교보문고 이북 스타일 뷰어로 즉시 자동 렌더링됩니다.</span></p>
             <input type="file" id="fileInput" accept=".txt" style="display:none;">
         </div>
     </div>
 
-    <div id="reader-view">
-        <div id="viewer-content"></div>
+    <div id="main-layout">
+        <div class="sidebar">
+            <div>
+                <h2>🔄 파일 교체</h2>
+                <label for="fileInput2" class="file-change-label"><i class="fa-solid fa-arrows-rotate"></i> 다른 파일 불러오기</label>
+                <input type="file" id="fileInput2" accept=".txt" style="display:none;">
+                <div id="currentFileName" style="font-size:12px; text-align:center; opacity:0.6; margin-top:6px; word-break:break-all;"></div>
+            </div>
+
+            <div>
+                <h2>⚙️ 표시 및 정제 옵션</h2>
+                <div class="control-group">
+                    <button class="btn-primary" style="background-color:#d32f2f !important;" onclick="cleanSystemTags()"><i class="fa-solid fa-wand-magic-sparkles"></i> </psyche> & &lt;img=&gt; 태그 완전 삭제</button>
+                </div>
+            </div>
+
+            <div>
+                <h2>➕ 커스텀 치환 규칙 (toast14 기능)</h2>
+                <div class="control-group">
+                    <div id="rulesList">
+                        <div class="rule-row">
+                            <input type="text" class="rule-find" value="허가됨" placeholder="찾을 단어">
+                            <span style="align-self:center; font-size:11px;">→</span>
+                            <input type="text" class="rule-replace" value="" placeholder="(공백이면 삭제)">
+                        </div>
+                    </div>
+                    <button onclick="addRuleRow()" style="padding:4px; font-size:12px; margin-top:4px;"><i class="fa-solid fa-plus"></i> 규칙 추가</button>
+                    <button class="btn-primary" onclick="applyCustomRules()" style="margin-top:8px;"><i class="fa-solid fa-check"></i> 치환 규칙 일괄 적용</button>
+                </div>
+            </div>
+
+            <div>
+                <h2>🎨 이북 스타일 설정</h2>
+                <div class="control-group">
+                    <label>화면 테마 색상</label>
+                    <div class="grid-4">
+                        <button onclick="changeTheme('paper')" style="background:#FDFCF0; color:#2B2B2B; font-size:11px; padding:6px 0;">미색</button>
+                        <button onclick="changeTheme('white')" style="background:#ffffff; color:#111111; font-size:11px; padding:6px 0;">화이트</button>
+                        <button onclick="changeTheme('sepia')" style="background:#f4ecd8; color:#5b4636; font-size:11px; padding:6px 0;">세피아</button>
+                        <button onclick="changeTheme('dark')" style="background:#1e1e1e; color:#d4d4d4; font-size:11px; padding:6px 0;">다크</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>글자 크기 조절</label>
+                    <div class="grid-2">
+                        <button onclick="adjustFontSize(1)"><i class="fa-solid fa-font"></i> 크게 A+</button>
+                        <button onclick="adjustFontSize(-1)"><i class="fa-solid fa-font"></i> 작게 A-</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:auto; padding-top:15px;">
+                <h2>💾 고품질 내보내기</h2>
+                <button class="btn-primary" onclick="window.print()" style="width:100%; height:45px; font-size:14px;"><i class="fa-solid fa-file-pdf"></i> 깔끔한 책 형태로 PDF 저장</button>
+                <div style="font-size:11px; opacity:0.6; text-align:center; margin-top:6px;">※ 인쇄 창이 뜨면 대상 지정을 <b>[PDF로 저장]</b>으로 선택하세요.</div>
+            </div>
+        </div>
+
+        <div class="viewer-master">
+            <div id="viewer-container"></div>
+        </div>
     </div>
-</div>
 
-<script>
-    const fileInput = document.getElementById('fileInput');
-    const dropzone = document.getElementById('dropzone');
-    const uploadView = document.getElementById('upload-view');
-    const readerView = document.getElementById('reader-view');
-    const viewerContent = document.getElementById('viewer-content');
-    const viewerNav = document.getElementById('viewer-nav');
+    <script>
+        let rawText = ""; 
+        let currentFontSize = 16;
+        
+        const uploadContainer = document.getElementById('upload-container');
+        const mainLayout = document.getElementById('main-layout');
+        const viewer = document.getElementById('viewer-container');
+        const dropzone = document.getElementById('dropzone');
+        const currentFileName = document.getElementById('currentFileName');
 
-    let rawText = "";
-
-    // 1. 파일 업로드 기능
-    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-
-    dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropzone.classList.add('drag-active');
-    });
-
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-active'));
-
-    dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropzone.classList.remove('drag-active');
-        handleFile(e.dataTransfer.files[0]);
-    });
-
-    function handleFile(file) {
-        if (!file || !file.name.endsWith('.txt')) {
-            alert("유효한 .txt 파일을 선택해주세요.");
-            return;
+        // [공통] 파일 처리 및 뷰어 렌더링
+        function loadTextFile(file) {
+            if (!file) return;
+            currentFileName.textContent = "현재 도서: " + file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                rawText = e.target.result;
+                parseAndRenderText(rawText);
+                
+                // 첫 화면 드롭존 숨기고 메인 리더창 켜기
+                uploadContainer.style.display = 'none';
+                mainLayout.style.display = 'flex';
+            };
+            reader.readAsText(file, "UTF-8");
         }
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            rawText = e.target.result;
-            renderText(rawText);
-            switchToViewer();
-        };
-        reader.readAsText(file, "UTF-8");
-    }
+        // 대사 감지 기능 및 문단 정렬 기능 (toast14처럼 디자인 강조)
+        function parseAndRenderText(text) {
+            const lines = text.split('\n');
+            let htmlResult = "";
 
-    // 2. 뷰어에 텍스트 띄우기 & 대사 하이라이트
-    function renderText(text) {
-        // " " 또는 『 』 또는 「 」 안에 있는 대사를 찾아 배경색 입히기
-        let formattedText = text
-            .replace(/"([^"]*)"/g, '<span class="dialogue">"$1"</span>')
-            .replace(/『([^』]*)』/g, '<span class="dialogue">『$1』</span>')
-            .replace(/「([^」]*)」/g, '<span class="dialogue">「$1」</span>');
+            lines.forEach(line => {
+                let trimmed = line.trim();
+                if (!trimmed) {
+                    htmlResult += "<br>";
+                    return;
+                }
 
-        // PDF로 뺄 때 중간에 잘리지 않도록 문단 단위로 묶어주기
-        const paragraphs = formattedText.split('\n');
-        viewerContent.innerHTML = paragraphs
-            .map(p => p.trim() ? `<div class="novel-section">${p}</div>` : '<br>')
-            .join('');
-    }
+                // 큰따옴표(" "), 작은따옴표(' '), 겹화살괄호(『 』, 「 」)로 시작하는 대사 패턴 자동 감지
+                const isDialogue = /^["'『「].*["'』｣]$/.test(trimmed) || trimmed.includes('이 말했다') || trimmed.includes('아뢰었다');
 
-    function switchToViewer() {
-        uploadView.style.display = 'none';
-        readerView.style.display = 'flex';
-        viewerNav.style.display = 'flex';
-    }
+                if (isDialogue) {
+                    htmlResult += `<span class="novel-paragraph dialogue-line">${line}</span>`;
+                } else {
+                    htmlResult += `<div class="novel-paragraph">${line}</div>`;
+                }
+            });
 
-    function resetViewer() {
-        uploadView.style.display = 'flex';
-        readerView.style.display = 'none';
-        viewerNav.style.display = 'none';
-        fileInput.value = "";
-    }
+            viewer.innerHTML = htmlResult;
+        }
 
-    // 3. 태그 정제 (</psyche>, <img=> 등 지우기)
-    function cleanText() {
-        let currentText = viewerContent.innerText;
-        currentText = currentText.replace(/<[^>]+>/g, ""); // 모든 꺾쇠 태그 제거
-        currentText = currentText.replace(/허가됨/g, ""); // '허가됨' 단어 제거
-        
-        renderText(currentText);
-        alert("태그가 깔끔하게 정리되었습니다!");
-    }
+        // 파일 입력 감지 이벤트 바인딩 (메인 2개 버튼)
+        document.getElementById('fileInput').addEventListener('change', (e) => loadTextFile(e.target.files[0]));
+        document.getElementById('fileInput2').addEventListener('change', (e) => {
+            loadTextFile(e.target.files[0]);
+            e.target.value = ''; // 동일 파일 재업로드 버그 방지
+        });
 
-    // 4. PDF 저장 (잘림 방지)
-    function exportPDF() {
-        const element = document.getElementById('viewer-content');
-        const opt = {
-            margin: [20, 20, 20, 20],
-            filename: 'Novel_Export.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
+        // 드래그 앤 드롭 구현
+        window.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-active'); });
+        window.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('drag-active'); });
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('drag-active');
+            if (e.dataTransfer.files.length > 0) loadTextFile(e.dataTransfer.files[0]);
+        });
 
-        html2pdf().set(opt).from(element).save();
-    }
-</script>
+        // 🧹 시스템 꺾쇠 태그 완벽 삭제 기능
+        function cleanSystemTags() {
+            if (!rawText) return;
+            let text = viewer.innerText;
+            // <img="...", </psyche> 등을 전부 포함하는 정규표현식 치환
+            text = text.replace(/<[^>]+>/g, "");
+            text = text.replace(/\n\s*\n\s*\n/g, "\n\n"); // 과도한 공백 압축
+            parseAndRenderText(text);
+            alert("</psyche> 및 <img=> 을 포함한 모든 시스템 특수 태그가 제거되었습니다.");
+        }
 
+        // ➕ 커스텀 치환 규칙 열(Row) 추가 기능 (toast14 치환용 규칙 기능)
+        function addRuleRow() {
+            const container = document.getElementById('rulesList');
+            const row = document.createElement('div');
+            row.className = 'rule-row';
+            row.innerHTML = `
+                <input type="text" class="rule-find" placeholder="찾을 단어">
+                <span style="align-self:center; font-size:11px;">→</span>
+                <input type="text" class="rule-replace" placeholder="(공백이면 삭제)">
+                <button class="btn-del-rule" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(row);
+        }
+
+        // ✏️ 커스텀 치환 규칙 본문 적용 함수
+        function applyCustomRules() {
+            let currentText = viewer.innerText;
+            const findInputs = document.querySelectorAll('.rule-find');
+            const replaceInputs = document.querySelectorAll('.rule-replace');
+            let count = 0;
+
+            for (let i = 0; i < findInputs.length; i++) {
+                let findTarget = findInputs[i].value;
+                let replaceValue = replaceInputs[i].value;
+
+                if (findTarget) {
+                    // 특수 기호 이스케이프 및 전역 검색 처리
+                    let escapedTarget = findTarget.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    let regex = new RegExp(escapedTarget, 'g');
+                    currentText = currentText.replace(regex, replaceValue);
+                    count++;
+                }
+            }
+
+            if (count === 0) {
+                alert("입력된 규칙이 없습니다.");
+                return;
+            }
+
+            parseAndRenderText(currentText);
+            alert("작성하신 모든 단어 치환/삭제 규칙이 본문에 일괄 적용되었습니다!");
+        }
+
+        // 스타일 세팅 함수 (테마 및 폰트 크기)
+        function changeTheme(theme) {
+            document.body.className = '';
+            if (theme !== 'paper') document.body.classList.add('theme-' + theme);
+        }
+
+        function adjustFontSize(value) {
+            currentFontSize += value;
+            if (currentFontSize < 12) currentFontSize = 12;
+            if (currentFontSize > 28) currentFontSize = 28;
+            viewer.style.fontSize = currentFontSize + 'px';
+        }
+    </script>
 </body>
 </html>
