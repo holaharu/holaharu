@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* 1. 디자인 변수 정의 */
+        /* 디자인 변수 정의 */
         :root {
             --bg-viewer: #FDFCF0; 
             --text-viewer: #2B2B2B;
@@ -22,7 +22,6 @@
             --dialogue-text: #1A252C;
         }
 
-        /* 테마 색상 설정 */
         body.theme-white { --bg-viewer: #ffffff; --text-viewer: #111111; --dialogue-bg: #f1f3f5; }
         body.theme-sepia { --bg-viewer: #f4ecd8; --text-viewer: #5b4636; --dialogue-bg: rgba(91, 70, 54, 0.07); }
         body.theme-dark {
@@ -41,7 +40,7 @@
             overflow: hidden;
         }
 
-        /* 2. 초기 업로드 대기 화면 */
+        /* 초기 업로드 대기 화면 */
         #upload-container {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: #FDFCF0; display: flex; flex-direction: column;
@@ -59,7 +58,7 @@
         .dropzone i { font-size: 64px; color: var(--accent-color); margin-bottom: 20px; }
         .dropzone p { font-size: 18px; font-weight: 500; color: #4A6572; text-align: center; line-height: 1.6; }
 
-        /* 3. 메인 레이아웃 */
+        /* 메인 레이아웃 */
         #main-layout { display: none; width: 100%; height: 100%; }
         
         .sidebar {
@@ -70,7 +69,7 @@
             font-size: 15px; font-weight: 700; color: var(--accent-color);
             border-bottom: 2px solid var(--accent-color); padding-bottom: 6px; margin-bottom: 10px;
         }
-        .control-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+        .control-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
         .control-group label { font-size: 12px; font-weight: 600; opacity: 0.8; }
         
         button, label.file-change-label {
@@ -80,6 +79,7 @@
         }
         button:hover, label.file-change-label:hover { background-color: #eee; }
         .btn-primary { background-color: var(--accent-color) !important; color: white !important; border: none; }
+        
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
         .rule-row { display: flex; gap: 4px; margin-bottom: 4px; }
@@ -89,26 +89,23 @@
         }
         .btn-del-rule { width: 10%; padding: 6px; background: #ffebee; color: #c62828; border: none; cursor: pointer; }
 
-        /* 🌟 수정 포인트 1: 배경 잘림 현상 해결 */
+        /* 리더 뷰어 영역 */
         .viewer-master { 
             flex: 1; overflow-y: auto; background-color: #e9ecef; 
-            text-align: center; /* 내부 컨테이너 중앙 정렬용 */
-            padding: 40px 20px;
+            text-align: center; padding: 40px 20px;
         }
         body.theme-dark .viewer-master { background-color: #121212; }
         
         #viewer-container {
-            display: inline-block; /* 내용물 길이에 맞춰 배경이 끝까지 늘어나도록 강제 */
-            text-align: left; /* 본문 텍스트 좌측 정렬 복구 */
+            display: inline-block; text-align: left; 
             background-color: var(--bg-viewer); color: var(--text-viewer);
-            width: 100%; max-width: 760px; height: auto; /* 고정 높이 해제 */
+            width: 100%; max-width: 760px; height: auto;
             padding: 60px 50px; box-shadow: 0 4px 25px rgba(0,0,0,0.07); border-radius: 4px;
             
             font-family: 'Noto Serif KR', serif; font-size: 16px; line-height: 1.9;
             text-align: justify; word-break: keep-all; white-space: pre-wrap;
         }
 
-        /* 대사 하이라이트 스타일 (웹 전용) */
         .dialogue-line {
             background-color: var(--dialogue-bg);
             color: var(--dialogue-text);
@@ -117,46 +114,20 @@
             display: block;
         }
 
-        /* 🌟 수정 포인트 2: 진짜 '책' 처럼 PDF 출력되도록 강제 설정 */
+        /* 인쇄(PDF) 전용 스타일 */
         @media print {
-            /* 종이 규격 및 여백 설정 (A4 기준 책 여백) */
-            @page {
-                size: A4 portrait;
-                margin: 25mm 20mm; /* 상하 25mm, 좌우 20mm 책 여백 */
-            }
-
+            @page { size: A4 portrait; margin: 25mm 20mm; }
             body, html { height: auto !important; background: white !important; color: black !important; overflow: visible !important; }
-            .sidebar { display: none !important; } /* 메뉴 완벽 숨김 */
-            
-            .viewer-master { 
-                display: block !important; padding: 0 !important; 
-                background: white !important; overflow: visible !important; height: auto !important; 
-            }
-            
+            .sidebar { display: none !important; }
+            .viewer-master { display: block !important; padding: 0 !important; background: white !important; overflow: visible !important; height: auto !important; }
             #viewer-container {
                 display: block !important; box-shadow: none !important; padding: 0 !important; 
                 max-width: 100% !important; width: 100% !important; 
                 background: white !important; color: black !important;
-                font-size: 11pt !important; /* 인쇄용 표준 폰트 크기 */
-                line-height: 1.7 !important;
+                font-size: 11pt !important; line-height: 1.7 !important;
             }
-
-            /* 책처럼 문단 들여쓰기 및 페이지 잘림 방지 */
-            .novel-paragraph {
-                page-break-inside: avoid !important; /* 문단 중간에서 페이지 넘어가는 것 방지 */
-                break-inside: avoid !important;
-                margin-bottom: 0.8em !important;
-                text-indent: 1em !important; /* 책처럼 첫 줄 들여쓰기 */
-                text-align: justify !important;
-            }
-
-            /* 인쇄할 때는 대사 배경색을 빼서 진짜 종이책처럼 보이게 처리 */
-            .dialogue-line { 
-                background: none !important; border-left: none !important; 
-                padding: 0 !important; margin: 0.8em 0 !important;
-                color: black !important; font-weight: normal !important;
-                text-indent: 1em !important;
-            }
+            .novel-paragraph { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 0.8em !important; text-indent: 1em !important; text-align: justify !important; }
+            .dialogue-line { background: none !important; border-left: none !important; padding: 0 !important; margin: 0.8em 0 !important; color: black !important; font-weight: normal !important; text-indent: 1em !important; }
         }
     </style>
 </head>
@@ -182,7 +153,12 @@
             <div>
                 <h2>⚙️ 표시 및 정제 옵션</h2>
                 <div class="control-group">
-                    <button class="btn-primary" style="background-color:#d32f2f !important;" onclick="cleanSystemTags()"><i class="fa-solid fa-wand-magic-sparkles"></i> </psyche> 등 시스템 태그 삭제</button>
+                    <button class="btn-primary" style="background-color:#d32f2f !important; font-size:12px;" onclick="cleanSystemTags()">
+                        <i class="fa-solid fa-code"></i> ① 이미지/시스템 꺾쇠 태그 삭제
+                    </button>
+                    <button class="btn-primary" style="background-color:#8e24aa !important; font-size:12px;" onclick="cleanHiddenStory()">
+                        <i class="fa-solid fa-eye-slash"></i> ② 히든 스토리 / 스포일러 블록 삭제
+                    </button>
                 </div>
             </div>
 
@@ -224,7 +200,6 @@
             <div style="margin-top:auto; padding-top:15px;">
                 <h2>💾 책 양식으로 내보내기</h2>
                 <button class="btn-primary" onclick="window.print()" style="width:100%; height:45px; font-size:14px;"><i class="fa-solid fa-file-pdf"></i> 진짜 책처럼 PDF 인쇄</button>
-                <div style="font-size:11px; opacity:0.6; text-align:center; margin-top:6px;">※ 인쇄 창에서 대상 기기를 <b>[PDF로 저장]</b>으로 선택하세요.</div>
             </div>
         </div>
 
@@ -257,7 +232,6 @@
         }
 
         function parseAndRenderText(text) {
-            // 연속된 다중 빈 줄을 하나로 압축하여 여백 낭비 방지
             const compressedText = text.replace(/\n\s*\n\s*\n/g, "\n\n");
             const lines = compressedText.split('\n');
             let htmlResult = "";
@@ -281,38 +255,45 @@
         }
 
         document.getElementById('fileInput').addEventListener('change', (e) => loadTextFile(e.target.files[0]));
-        document.getElementById('fileInput2').addEventListener('change', (e) => {
-            loadTextFile(e.target.files[0]);
-            e.target.value = ''; 
-        });
-
+        document.getElementById('fileInput2').addEventListener('change', (e) => { loadTextFile(e.target.files[0]); e.target.value = ''; });
         window.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-active'); });
         window.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('drag-active'); });
-        window.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('drag-active');
-            if (e.dataTransfer.files.length > 0) loadTextFile(e.dataTransfer.files[0]);
-        });
+        window.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('drag-active'); if (e.dataTransfer.files.length > 0) loadTextFile(e.dataTransfer.files[0]); });
 
+        // ① 기존 시스템 꺾쇠 태그 삭제 함수
         function cleanSystemTags() {
             if (!rawText) return;
             let text = viewer.innerText;
-            text = text.replace(/<[^>]+>/g, "");
+            text = text.replace(/<[^>]+>/g, ""); // <...> 형태 전부 삭제
             text = text.replace(/\n\s*\n\s*\n/g, "\n\n"); 
             parseAndRenderText(text);
-            alert("시스템 특수 태그가 모두 제거되었습니다.");
+            alert("이미지 및 시스템 특수 태그(< >)가 모두 제거되었습니다.");
+        }
+
+        // ② 🌟 새로 추가된 히든 스토리/스포일러 블록 삭제 함수
+        function cleanHiddenStory() {
+            if (!rawText) return;
+            let text = viewer.innerText;
+
+            // 규칙 1: ![캐릭터]@ [표정:...][내면:...] 형태의 대괄호 블록 체인 삭제
+            // (줄바꿈이 섞여 있어도 잡아내도록 설정)
+            text = text.replace(/!\[[\s\S]*?\]@\s*(?:\[[\s\S]*?\]\s*)+/g, "");
+
+            // 규칙 2: @Hidden Spoiler@ 부터 @END@ 까지의 블록 전체 삭제
+            text = text.replace(/@Hidden\s+Spoiler@[\s\S]*?@END@/gi, "");
+
+            // 불필요하게 늘어난 빈 줄 압축
+            text = text.replace(/\n\s*\n\s*\n/g, "\n\n"); 
+
+            parseAndRenderText(text);
+            alert("히든 스토리 및 스포일러 설정 블록이 깔끔하게 삭제되었습니다.");
         }
 
         function addRuleRow() {
             const container = document.getElementById('rulesList');
             const row = document.createElement('div');
             row.className = 'rule-row';
-            row.innerHTML = `
-                <input type="text" class="rule-find" placeholder="찾을 단어">
-                <span style="align-self:center; font-size:11px;">→</span>
-                <input type="text" class="rule-replace" placeholder="(공백이면 삭제)">
-                <button class="btn-del-rule" onclick="this.parentElement.remove()">X</button>
-            `;
+            row.innerHTML = `<input type="text" class="rule-find" placeholder="찾을 단어"><span style="align-self:center; font-size:11px;">→</span><input type="text" class="rule-replace" placeholder="(공백이면 삭제)"><button class="btn-del-rule" onclick="this.parentElement.remove()">X</button>`;
             container.appendChild(row);
         }
 
@@ -325,7 +306,6 @@
             for (let i = 0; i < findInputs.length; i++) {
                 let findTarget = findInputs[i].value;
                 let replaceValue = replaceInputs[i].value;
-
                 if (findTarget) {
                     let escapedTarget = findTarget.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                     let regex = new RegExp(escapedTarget, 'g');
@@ -338,17 +318,8 @@
             alert("치환 규칙이 적용되었습니다!");
         }
 
-        function changeTheme(theme) {
-            document.body.className = '';
-            if (theme !== 'paper') document.body.classList.add('theme-' + theme);
-        }
-
-        function adjustFontSize(value) {
-            currentFontSize += value;
-            if (currentFontSize < 12) currentFontSize = 12;
-            if (currentFontSize > 28) currentFontSize = 28;
-            viewer.style.fontSize = currentFontSize + 'px';
-        }
+        function changeTheme(theme) { document.body.className = ''; if (theme !== 'paper') document.body.classList.add('theme-' + theme); }
+        function adjustFontSize(value) { currentFontSize += value; if (currentFontSize < 12) currentFontSize = 12; if (currentFontSize > 28) currentFontSize = 28; viewer.style.fontSize = currentFontSize + 'px'; }
     </script>
 </body>
 </html>
