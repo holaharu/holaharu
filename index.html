@@ -1,325 +1,579 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>고품격 웹 소설 리더 & PDF 변환기</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <style>
-        /* 디자인 변수 정의 */
-        :root {
-            --bg-viewer: #FDFCF0; 
-            --text-viewer: #2B2B2B;
-            --bg-ui: #f8f9fa;
-            --text-ui: #333333;
-            --border-ui: #e0e0e0;
-            --accent-color: #4A6572;
-            --dialogue-bg: rgba(74, 101, 114, 0.06);
-            --dialogue-text: #1A252C;
-        }
-
-        body.theme-white { --bg-viewer: #ffffff; --text-viewer: #111111; --dialogue-bg: #f1f3f5; }
-        body.theme-sepia { --bg-viewer: #f4ecd8; --text-viewer: #5b4636; --dialogue-bg: rgba(91, 70, 54, 0.07); }
-        body.theme-dark {
-            --bg-viewer: #1e1e1e; --text-viewer: #d4d4d4;
-            --bg-ui: #2d2d2d; --text-ui: #f5f5f5; --border-ui: #444444;
-            --dialogue-bg: rgba(255,255,255,0.08); --dialogue-text: #ffffff;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: var(--bg-ui);
-            color: var(--text-ui);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* 초기 업로드 대기 화면 */
-        #upload-container {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #FDFCF0; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100;
-        }
-        .dropzone {
-            width: 90%; max-width: 600px; height: 320px;
-            border: 3px dashed #4A6572; border-radius: 12px;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s;
-        }
-        .dropzone:hover, .dropzone.drag-active {
-            background: rgba(74, 101, 114, 0.1); transform: scale(1.01);
-        }
-        .dropzone i { font-size: 64px; color: var(--accent-color); margin-bottom: 20px; }
-        .dropzone p { font-size: 18px; font-weight: 500; color: #4A6572; text-align: center; line-height: 1.6; }
-
-        /* 메인 레이아웃 */
-        #main-layout { display: none; width: 100%; height: 100%; }
-        
-        .sidebar {
-            width: 340px; background-color: var(--bg-ui); border-right: 1px solid var(--border-ui);
-            padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
-        }
-        .sidebar h2 {
-            font-size: 15px; font-weight: 700; color: var(--accent-color);
-            border-bottom: 2px solid var(--accent-color); padding-bottom: 6px; margin-bottom: 10px;
-        }
-        .control-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-        .control-group label { font-size: 12px; font-weight: 600; opacity: 0.8; }
-        
-        button, label.file-change-label {
-            background-color: #ffffff; color: #333333; border: 1px solid var(--border-ui);
-            padding: 10px; font-size: 13px; font-weight: 500; border-radius: 6px;
-            cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        button:hover, label.file-change-label:hover { background-color: #eee; }
-        .btn-primary { background-color: var(--accent-color) !important; color: white !important; border: none; }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-        .rule-row { display: flex; gap: 4px; margin-bottom: 4px; }
-        .rule-row input {
-            width: 45%; padding: 6px; border: 1px solid var(--border-ui);
-            border-radius: 4px; font-size: 12px; background: #fff; color: #333;
-        }
-        .btn-del-rule { width: 10%; padding: 6px; background: #ffebee; color: #c62828; border: none; cursor: pointer; }
-
-        /* 리더 뷰어 영역 */
-        .viewer-master { 
-            flex: 1; overflow-y: auto; background-color: #e9ecef; 
-            text-align: center; padding: 40px 20px;
-        }
-        body.theme-dark .viewer-master { background-color: #121212; }
-        
-        #viewer-container {
-            display: inline-block; text-align: left; 
-            background-color: var(--bg-viewer); color: var(--text-viewer);
-            width: 100%; max-width: 760px; height: auto;
-            padding: 60px 50px; box-shadow: 0 4px 25px rgba(0,0,0,0.07); border-radius: 4px;
-            
-            font-family: 'Noto Serif KR', serif; font-size: 16px; line-height: 1.9;
-            text-align: justify; word-break: keep-all; white-space: pre-wrap;
-        }
-
-        .dialogue-line {
-            background-color: var(--dialogue-bg);
-            color: var(--dialogue-text);
-            padding: 4px 10px; margin: 6px 0; border-radius: 6px;
-            border-left: 3px solid var(--accent-color);
-            display: block;
-        }
-
-        /* 인쇄(PDF) 전용 스타일 */
-        @media print {
-            @page { size: A4 portrait; margin: 25mm 20mm; }
-            body, html { height: auto !important; background: white !important; color: black !important; overflow: visible !important; }
-            .sidebar { display: none !important; }
-            .viewer-master { display: block !important; padding: 0 !important; background: white !important; overflow: visible !important; height: auto !important; }
-            #viewer-container {
-                display: block !important; box-shadow: none !important; padding: 0 !important; 
-                max-width: 100% !important; width: 100% !important; 
-                background: white !important; color: black !important;
-                font-size: 11pt !important; line-height: 1.7 !important;
-            }
-            .novel-paragraph { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 0.8em !important; text-indent: 1em !important; text-align: justify !important; }
-            .dialogue-line { background: none !important; border-left: none !important; padding: 0 !important; margin: 0.8em 0 !important; color: black !important; font-weight: normal !important; text-indent: 1em !important; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>간단 텍스트 편집기 v4</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style id="dynamicFontStyle">
+    @font-face {
+      font-family: 'GangwonEducationModuche';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEdu_OTFLightA.woff') format('woff');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eef4ff; color: #1d2a3a; font-family: Arial, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+    .app { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+    .panel { padding: 18px; background: #f9fbff; border-right: 1px solid #d7e3f4; overflow-y: auto; box-shadow: 8px 0 24px rgba(60,90,140,.08); }
+    h1 { margin: 0 0 8px; font-size: 22px; color: #203252; }
+    .lead { margin: 0 0 16px; font-size: 13px; line-height: 1.55; color: #56708f; }
+    .group, details { background: #fff; padding: 14px; border-radius: 16px; margin-bottom: 12px; border: 1px solid #dce8f7; box-shadow: 0 8px 20px rgba(100,132,179,.08); }
+    .group h2, details summary { margin: 0; font-size: 15px; color: #294064; font-weight: 700; }
+    details summary { cursor: pointer; list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+    details[open] summary { margin-bottom: 12px; }
+    .field { margin-bottom: 10px; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: block; margin-bottom: 6px; font-size: 13px; color: #3a5375; }
+    input[type="text"], select, button, input[type="file"], input[type="color"] { width: 100%; }
+    input[type="text"], select {
+      border: 1px solid #cfe0f2; background: #fff; color: #18304f; border-radius: 11px; padding: 10px 12px; font-size: 14px; outline: none;
+    }
+    .btn { border: 0; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 700; cursor: pointer; background: #4b8dff; color: white; box-shadow: 0 8px 18px rgba(75,141,255,.22); }
+    .btn.secondary { background: #edf4ff; color: #29508b; box-shadow: none; border: 1px solid #cfe0f2; }
+    .btn.danger { background: #ff6f91; box-shadow: 0 8px 18px rgba(255,111,145,.18); }
+    .btn.small { width: auto; padding: 8px 12px; font-size: 13px; }
+    .hint, .meta { margin-top: 8px; font-size: 12px; line-height: 1.5; color: #6b82a0; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip-btn {
+      width: auto; padding: 8px 10px; border-radius: 999px; border: 1px solid #cfe0f2; background: #fff; color: #294064; cursor: pointer; font-size: 13px;
+    }
+    .chip-btn.active { background: #edf4ff; border-color: #7aa7ff; box-shadow: 0 0 0 3px rgba(122,167,255,.15); }
+    .size-row { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; }
+    .size-display {
+      display: flex; align-items: center; justify-content: center; border: 1px solid #cfe0f2; background: #fff; border-radius: 11px; color: #18304f; font-size: 14px; min-height: 40px;
+    }
+    .swatch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+    .swatch-btn { height: 28px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+    .swatch-btn.active { border-color: #4b8dff; box-shadow: 0 0 0 3px rgba(75,141,255,.18); }
+    .font-saved-list { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .font-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: #edf4ff; color: #29508b; font-size: 12px; border: 1px solid #cfe0f2; }
+    .font-chip button { width: auto; border: 0; background: transparent; color: #7a8fb0; cursor: pointer; padding: 0; font-size: 12px; }
+    .stage-area { padding: 24px; overflow: auto; background: linear-gradient(180deg,#f3f8ff 0%,#e7f0ff 100%); display: flex; justify-content: center; align-items: flex-start; }
+    #stage { position: relative; width: 1280px; height: 720px; background: #dde8f7 center/100% 100% no-repeat; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 50px rgba(87,125,179,.20); flex: 0 0 auto; }
+    .text-box { position: absolute; display: inline-block; width: fit-content; min-width: 16px; max-width: calc(100% - 12px); min-height: 16px; padding: 4px 6px; border: 2px dashed transparent; border-radius: 12px; background: transparent; transition: border-color .12s ease, background-color .12s ease, box-shadow .12s ease; }
+    .text-box.active { border-color: rgba(54,125,255,.75); background: rgba(255,255,255,.18); box-shadow: 0 0 0 4px rgba(94,153,255,.12); }
+    .move-handle {
+      position: absolute; top: -11px; right: -11px; width: 24px; height: 24px; border-radius: 999px; border: 1px solid #b9cff1; background: #fff; color: #5077b6;
+      display: none; align-items: center; justify-content: center; font-size: 13px; cursor: move; box-shadow: 0 6px 14px rgba(70,104,160,.15); user-select: none;
+    }
+    .text-box.active .move-handle { display: flex; }
+    .editor { display: inline-block; width: auto; min-width: 1px; min-height: 1em; max-width: 100%; outline: none; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; cursor: text; color: #000000; text-shadow: none; font-family: 'GangwonEducationModuche', Arial, sans-serif; font-size: 15pt; line-height: 1.35; text-align: left; font-weight: 400; background-color: transparent; }
+    .bottom-tools { margin-top: 18px; }
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { border-right: 0; border-bottom: 1px solid #d7e3f4; }
+      .stage-area { justify-content: flex-start; }
+    }
+  </style>
 </head>
 <body>
+  <div class="app">
+    <aside class="panel">
+      <h1>간단 편집기</h1>
+      <p class="lead">폰트와 크기는 클릭형 버튼으로 바꿔서 선택이 안 풀리게 했고, 박스 이동도 손잡이로만 되게 바꿨습니다.</p>
 
-    <div id="upload-container">
-        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-            <i class="fa-solid fa-book-open"></i>
-            <p><strong>TXT 소설 파일을 이곳에 드래그하거나 클릭하세요.</strong><br><span style="font-size:14px; color:#777; font-weight:normal;">배경 잘림 없는 웹 뷰어 및 책 형태의 PDF로 자동 변환됩니다.</span></p>
-            <input type="file" id="fileInput" accept=".txt" style="display:none;">
+      <div class="group">
+        <h2>텍스트 박스</h2>
+        <div class="row">
+          <button class="btn" id="addBoxBtn" type="button">텍스트 박스 추가</button>
+          <button class="btn danger" id="deleteBoxBtn" type="button">현재 박스 삭제</button>
         </div>
-    </div>
+        <div class="hint">박스 이동은 오른쪽 위 동그란 손잡이로만 됩니다.</div>
+      </div>
 
-    <div id="main-layout">
-        <div class="sidebar">
-            <div>
-                <h2>🔄 파일 교체</h2>
-                <label for="fileInput2" class="file-change-label"><i class="fa-solid fa-arrows-rotate"></i> 다른 파일 불러오기</label>
-                <input type="file" id="fileInput2" accept=".txt" style="display:none;">
-                <div id="currentFileName" style="font-size:12px; text-align:center; opacity:0.6; margin-top:6px; word-break:break-all;"></div>
-            </div>
-
-            <div>
-                <h2>⚙️ 표시 및 정제 옵션</h2>
-                <div class="control-group">
-                    <button class="btn-primary" style="background-color:#d32f2f !important; font-size:12px;" onclick="cleanSystemTags()">
-                        <i class="fa-solid fa-code"></i> ① 이미지/시스템 꺾쇠 태그 삭제
-                    </button>
-                    <button class="btn-primary" style="background-color:#8e24aa !important; font-size:12px;" onclick="cleanHiddenStory()">
-                        <i class="fa-solid fa-eye-slash"></i> ② 히든 스토리 / 스포일러 블록 삭제
-                    </button>
-                </div>
-            </div>
-
-            <div>
-                <h2>➕ 커스텀 치환 규칙</h2>
-                <div class="control-group">
-                    <div id="rulesList">
-                        <div class="rule-row">
-                            <input type="text" class="rule-find" value="허가됨" placeholder="찾을 단어">
-                            <span style="align-self:center; font-size:11px;">→</span>
-                            <input type="text" class="rule-replace" value="" placeholder="(공백이면 삭제)">
-                        </div>
-                    </div>
-                    <button onclick="addRuleRow()" style="padding:4px; font-size:12px; margin-top:4px;"><i class="fa-solid fa-plus"></i> 규칙 추가</button>
-                    <button class="btn-primary" onclick="applyCustomRules()" style="margin-top:8px;"><i class="fa-solid fa-check"></i> 치환 규칙 일괄 적용</button>
-                </div>
-            </div>
-
-            <div>
-                <h2>🎨 이북 스타일 설정</h2>
-                <div class="control-group">
-                    <label>화면 테마 색상</label>
-                    <div class="grid-4">
-                        <button onclick="changeTheme('paper')" style="background:#FDFCF0; color:#2B2B2B; font-size:11px; padding:6px 0;">미색</button>
-                        <button onclick="changeTheme('white')" style="background:#ffffff; color:#111111; font-size:11px; padding:6px 0;">화이트</button>
-                        <button onclick="changeTheme('sepia')" style="background:#f4ecd8; color:#5b4636; font-size:11px; padding:6px 0;">세피아</button>
-                        <button onclick="changeTheme('dark')" style="background:#1e1e1e; color:#d4d4d4; font-size:11px; padding:6px 0;">다크</button>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <label>글자 크기 조절 (웹 전용)</label>
-                    <div class="grid-2">
-                        <button onclick="adjustFontSize(1)"><i class="fa-solid fa-font"></i> 크게 A+</button>
-                        <button onclick="adjustFontSize(-1)"><i class="fa-solid fa-font"></i> 작게 A-</button>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top:auto; padding-top:15px;">
-                <h2>💾 책 양식으로 내보내기</h2>
-                <button class="btn-primary" onclick="window.print()" style="width:100%; height:45px; font-size:14px;"><i class="fa-solid fa-file-pdf"></i> 진짜 책처럼 PDF 인쇄</button>
-            </div>
+      <div class="group">
+        <h2>현재 박스 설정</h2>
+        <div class="field">
+          <label>글씨체</label>
+          <div class="chip-grid" id="fontButtons"></div>
         </div>
-
-        <div class="viewer-master">
-            <div id="viewer-container"></div>
+        <div class="field">
+          <label>글자 크기</label>
+          <div class="size-row">
+            <button class="btn secondary" id="fontSizeDown" type="button">-</button>
+            <div class="size-display" id="fontSizeDisplay">15pt</div>
+            <button class="btn secondary" id="fontSizeUp" type="button">+</button>
+          </div>
+          <div class="chip-grid" id="fontSizePresets" style="margin-top:8px;"></div>
         </div>
-    </div>
+        <div class="row">
+          <div class="field">
+            <label for="textColor">글자색</label>
+            <input type="color" id="textColor" value="#000000" />
+          </div>
+          <div class="field">
+            <label for="align">정렬</label>
+            <select id="align">
+              <option value="left">왼쪽</option>
+              <option value="center">가운데</option>
+              <option value="right">오른쪽</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn secondary" id="boldBtn" type="button">B</button>
+          <button class="btn secondary" id="clearHighlightBtn" type="button">형광펜 지우기</button>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label for="lineHeight">줄 간격</label>
+          <input type="range" id="lineHeight" min="100" max="220" value="135" />
+          <div class="meta" id="lineHeightValue">1.35</div>
+        </div>
+        <div class="field">
+          <label>파스텔 형광펜</label>
+          <div class="swatch-grid" id="swatchGrid"></div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="highlightColor">직접 색상</label>
+            <input type="color" id="highlightColor" value="#fde2e4" />
+          </div>
+          <div class="field">
+            <label for="highlightOpacity">투명도</label>
+            <input type="range" id="highlightOpacity" min="0" max="100" value="75" />
+            <div class="meta" id="highlightOpacityValue">75%</div>
+          </div>
+        </div>
+      </div>
 
-    <script>
-        let rawText = ""; 
-        let currentFontSize = 16;
-        
-        const uploadContainer = document.getElementById('upload-container');
-        const mainLayout = document.getElementById('main-layout');
-        const viewer = document.getElementById('viewer-container');
-        const dropzone = document.getElementById('dropzone');
-        const currentFileName = document.getElementById('currentFileName');
+      <div class="group">
+        <h2>저장</h2>
+        <div class="field">
+          <label for="fileName">파일명</label>
+          <input type="text" id="fileName" value="my-design" />
+        </div>
+        <button class="btn" id="saveBtn" type="button">PNG 저장</button>
+      </div>
 
-        function loadTextFile(file) {
-            if (!file) return;
-            currentFileName.textContent = "현재 도서: " + file.name;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                rawText = e.target.result;
-                parseAndRenderText(rawText);
-                uploadContainer.style.display = 'none';
-                mainLayout.style.display = 'flex';
-            };
-            reader.readAsText(file, "UTF-8");
-        }
+      <div class="bottom-tools">
+        <details>
+          <summary>폰트 추가</summary>
+          <div class="field" style="margin-top:12px;">
+            <label for="customFontName">폰트 이름</label>
+            <input type="text" id="customFontName" placeholder="예: 내가추가한폰트" />
+          </div>
+          <div class="field">
+            <label for="fontUpload">로컬 폰트 파일</label>
+            <input type="file" id="fontUpload" accept=".ttf,.otf,.woff,.woff2" />
+          </div>
+          <div class="field">
+            <button class="btn secondary" id="addLocalFontBtn" type="button">업로드 폰트 추가</button>
+          </div>
+          <div class="field">
+            <label for="webFontUrl">웹폰트 URL</label>
+            <input type="text" id="webFontUrl" placeholder="https://example.com/font.woff2" />
+          </div>
+          <button class="btn secondary" id="addWebFontBtn" type="button">웹폰트 URL 추가</button>
+          <div class="meta">추가한 폰트 목록은 자동 저장됩니다.</div>
+          <div class="font-saved-list" id="savedFontList"></div>
+        </details>
 
-        function parseAndRenderText(text) {
-            const compressedText = text.replace(/\n\s*\n\s*\n/g, "\n\n");
-            const lines = compressedText.split('\n');
-            let htmlResult = "";
+        <details>
+          <summary>배경 이미지</summary>
+          <div style="margin-top:12px;">
+            <input type="file" id="bgUpload" accept="image/*" style="display:none;" />
+            <button class="btn secondary small" id="bgUploadBtn" type="button">불러오기</button>
+            <div class="meta" id="imageInfo">현재 배경 크기: 1280 × 720</div>
+          </div>
+        </details>
+      </div>
+    </aside>
 
-            lines.forEach(line => {
-                let trimmed = line.trim();
-                if (!trimmed) {
-                    htmlResult += "<br>";
-                    return;
-                }
-                const isDialogue = /^["'『「].*["'』｣]$/.test(trimmed) || trimmed.includes('이 말했다') || trimmed.includes('아뢰었다');
+    <main class="stage-area">
+      <div id="stage"></div>
+    </main>
+  </div>
 
-                if (isDialogue) {
-                    htmlResult += `<div class="novel-paragraph dialogue-line">${line}</div>`;
-                } else {
-                    htmlResult += `<div class="novel-paragraph">${line}</div>`;
-                }
-            });
+  <script>
+    const STORAGE_KEY = 'elie_custom_fonts_v2';
+    const PRESET_COLORS = ['#fde2e4','#fad2e1','#e2ece9','#bee1e6','#dfe7fd','#cddafd','#f9dcc4','#fec89a','#faedcb','#e9edc9','#d8e2dc','#e4c1f9'];
+    const FONT_SIZE_PRESETS = [12, 15, 18, 20, 24, 28, 32, 40];
+    const BUILTIN_FONTS = [
+      { label: '강원교육모두체', value: "'GangwonEducationModuche', Arial, sans-serif" },
+      { label: '기본 고딕', value: "'Apple SD Gothic Neo','Malgun Gothic',sans-serif" },
+      { label: '세리프', value: "Georgia, 'Times New Roman', serif" }
+    ];
 
-            viewer.innerHTML = htmlResult;
-        }
+    const stage = document.getElementById('stage');
+    const bgUpload = document.getElementById('bgUpload');
+    const bgUploadBtn = document.getElementById('bgUploadBtn');
+    const imageInfo = document.getElementById('imageInfo');
+    const addBoxBtn = document.getElementById('addBoxBtn');
+    const deleteBoxBtn = document.getElementById('deleteBoxBtn');
+    const fontButtons = document.getElementById('fontButtons');
+    const fontSizeDown = document.getElementById('fontSizeDown');
+    const fontSizeUp = document.getElementById('fontSizeUp');
+    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+    const fontSizePresets = document.getElementById('fontSizePresets');
+    const textColor = document.getElementById('textColor');
+    const align = document.getElementById('align');
+    const boldBtn = document.getElementById('boldBtn');
+    const lineHeight = document.getElementById('lineHeight');
+    const lineHeightValue = document.getElementById('lineHeightValue');
+    const swatchGrid = document.getElementById('swatchGrid');
+    const highlightColor = document.getElementById('highlightColor');
+    const highlightOpacity = document.getElementById('highlightOpacity');
+    const highlightOpacityValue = document.getElementById('highlightOpacityValue');
+    const clearHighlightBtn = document.getElementById('clearHighlightBtn');
+    const fileName = document.getElementById('fileName');
+    const saveBtn = document.getElementById('saveBtn');
+    const dynamicFontStyle = document.getElementById('dynamicFontStyle');
+    const customFontName = document.getElementById('customFontName');
+    const fontUpload = document.getElementById('fontUpload');
+    const addLocalFontBtn = document.getElementById('addLocalFontBtn');
+    const webFontUrl = document.getElementById('webFontUrl');
+    const addWebFontBtn = document.getElementById('addWebFontBtn');
+    const savedFontList = document.getElementById('savedFontList');
 
-        document.getElementById('fileInput').addEventListener('change', (e) => loadTextFile(e.target.files[0]));
-        document.getElementById('fileInput2').addEventListener('change', (e) => { loadTextFile(e.target.files[0]); e.target.value = ''; });
-        window.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-active'); });
-        window.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('drag-active'); });
-        window.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('drag-active'); if (e.dataTransfer.files.length > 0) loadTextFile(e.dataTransfer.files[0]); });
+    let boxCount = 0, activeBox = null, dragging = false, dragOffsetX = 0, dragOffsetY = 0, savedRange = null;
+    let currentFontValue = BUILTIN_FONTS[0].value;
+    let customFonts = [];
 
-        // ① 기존 시스템 꺾쇠 태그 삭제 함수
-        function cleanSystemTags() {
-            if (!rawText) return;
-            let text = viewer.innerText;
-            text = text.replace(/<[^>]+>/g, ""); // <...> 형태 전부 삭제
-            text = text.replace(/\n\s*\n\s*\n/g, "\n\n"); 
-            parseAndRenderText(text);
-            alert("이미지 및 시스템 특수 태그(< >)가 모두 제거되었습니다.");
-        }
+    function setStageSize(w, h) { stage.style.width = `${w}px`; stage.style.height = `${h}px`; imageInfo.textContent = `현재 배경 크기: ${w} × ${h}`; }
+    function getEditor(box = activeBox) { return box ? box.querySelector('.editor') : null; }
+    function hexToRgba(hex, alpha) { const v = hex.replace('#',''); const n = parseInt(v,16); return `rgba(${(n>>16)&255}, ${(n>>8)&255}, ${n&255}, ${alpha})`; }
+    function autoFitBox(box = activeBox) {
+      if (!box) return; const editor = getEditor(box); if (!editor) return;
+      const stageW = stage.clientWidth, left = parseInt(box.style.left || '0', 10), available = Math.max(80, stageW - left - 12);
+      box.style.maxWidth = `${available}px`; editor.style.maxWidth = '100%'; box.style.width = 'fit-content';
+    }
+    function rgbToHex(color) {
+      if (!color) return '#000000'; if (color.startsWith('#')) return color; const nums = color.match(/\d+/g); if (!nums) return '#000000';
+      return '#' + nums.slice(0,3).map(v => Number(v).toString(16).padStart(2,'0')).join('');
+    }
+    function setActiveBox(box, preserveRange = false) {
+      document.querySelectorAll('.text-box').forEach(el => el.classList.remove('active'));
+      const sameBox = activeBox === box; activeBox = box; if (!preserveRange || !sameBox) savedRange = null;
+      if (activeBox) { activeBox.classList.add('active'); syncToolbarFromBox(); }
+    }
+    function clearActiveBox() { if (activeBox) activeBox.classList.remove('active'); activeBox = null; savedRange = null; }
+    function getCurrentFontSizeValue() {
+      const text = fontSizeDisplay.textContent || '15pt';
+      const n = parseInt(text, 10);
+      return Number.isFinite(n) ? n : 15;
+    }
+    function setFontSizeDisplay(value) { fontSizeDisplay.textContent = `${value}pt`; syncFontSizePresetActive(); }
+    function syncToolbarFromBox() {
+      if (!activeBox) return; const editor = getEditor(activeBox);
+      currentFontValue = editor.style.fontFamily || BUILTIN_FONTS[0].value;
+      setFontSizeDisplay(parseInt(editor.style.fontSize || '15', 10));
+      textColor.value = rgbToHex(editor.style.color || 'rgb(0,0,0)');
+      align.value = editor.style.textAlign || 'left';
+      lineHeight.value = Math.round((parseFloat(editor.style.lineHeight || '1.35')) * 100);
+      lineHeightValue.textContent = (lineHeight.value / 100).toFixed(2);
+      syncFontButtonsActive();
+    }
+    function captureSelection() {
+      const editor = getEditor(); const sel = window.getSelection();
+      if (!editor || !sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (!editor.contains(range.commonAncestorContainer)) return;
+      if (sel.toString().trim() === '') return;
+      savedRange = range.cloneRange();
+    }
+    function restoreSavedSelection() {
+      const editor = getEditor(); const sel = window.getSelection();
+      if (!editor || !sel || !savedRange) return false;
+      try { sel.removeAllRanges(); sel.addRange(savedRange); return true; } catch { return false; }
+    }
+    function unwrapSpan(span) {
+      const parent = span.parentNode;
+      while (span.firstChild) parent.insertBefore(span.firstChild, span);
+      parent.removeChild(span);
+    }
+    function unwrapSpansByMatch(root, matcher) {
+      [...root.querySelectorAll('span')].forEach(span => {
+        if (!matcher(span)) return;
+        unwrapSpan(span);
+      });
+    }
+    function cleanStyledSpans(root, styleKeys) {
+      [...root.querySelectorAll('span')].forEach(span => {
+        styleKeys.forEach(key => { span.style[key] = ''; });
+        if (span.dataset.highlight === '1' && !span.style.backgroundColor) delete span.dataset.highlight;
+        if (!span.getAttribute('style') && !span.dataset.highlight) unwrapSpan(span);
+      });
+    }
+    function applyStyleToSelection(styleMap, removeHighlight = false) {
+      if (!activeBox) return false;
+      if (!restoreSavedSelection()) return false;
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount || sel.toString().trim() === '') return false;
+      const range = sel.getRangeAt(0);
+      const frag = range.extractContents();
+      const holder = document.createElement('div');
+      holder.appendChild(frag);
+      if (removeHighlight) unwrapSpansByMatch(holder, span => span.dataset.highlight === '1');
+      const styleKeys = Object.keys(styleMap);
+      if (styleKeys.length) cleanStyledSpans(holder, styleKeys);
+      const span = document.createElement('span');
+      Object.entries(styleMap).forEach(([k, v]) => { span.style[k] = v; });
+      if (styleMap.backgroundColor) span.dataset.highlight = '1';
+      while (holder.firstChild) span.appendChild(holder.firstChild);
+      if ((removeHighlight && !styleMap.backgroundColor) || styleKeys.length === 0) {
+        const fragment = document.createDocumentFragment();
+        while (span.firstChild) fragment.appendChild(span.firstChild);
+        range.insertNode(fragment);
+      } else {
+        range.insertNode(span);
+      }
+      sel.removeAllRanges();
+      savedRange = null;
+      autoFitBox(activeBox);
+      return true;
+    }
+    function applyOrSetBox(setter) {
+      if (!activeBox) return;
+      const applied = setter(true);
+      if (!applied) {
+        setter(false);
+        autoFitBox(activeBox);
+      }
+    }
+    function setFontFamilyAction(value) {
+      currentFontValue = value;
+      syncFontButtonsActive();
+      applyOrSetBox((selectionMode) => {
+        if (selectionMode) return applyStyleToSelection({ fontFamily: value });
+        getEditor().style.fontFamily = value; return false;
+      });
+    }
+    function setFontSizeValue(value) {
+      const safe = Math.max(6, Math.min(200, value));
+      setFontSizeDisplay(safe);
+      applyOrSetBox((selectionMode) => {
+        if (selectionMode) return applyStyleToSelection({ fontSize: `${safe}pt` });
+        getEditor().style.fontSize = `${safe}pt`; return false;
+      });
+    }
+    function setTextColorAction() {
+      const value = textColor.value;
+      applyOrSetBox((selectionMode) => {
+        if (selectionMode) return applyStyleToSelection({ color: value });
+        getEditor().style.color = value; return false;
+      });
+    }
+    function setBoldAction() {
+      if (!activeBox) return;
+      const editor = getEditor();
+      editor.focus();
+      const restored = restoreSavedSelection();
+      const sel = window.getSelection();
+      const hasSelection = !!(restored && sel && sel.rangeCount && sel.toString().trim() !== '');
+      if (hasSelection) {
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('bold');
+        savedRange = null;
+        autoFitBox(activeBox);
+        return;
+      }
+      const current = editor.style.fontWeight || '400';
+      editor.style.fontWeight = (current === '700' || current === 'bold') ? '400' : '700';
+      autoFitBox(activeBox);
+    }
+    function setHighlightAction(color) {
+      highlightColor.value = color; syncSwatchActive();
+      applyOrSetBox((selectionMode) => {
+        if (selectionMode) return applyStyleToSelection({ backgroundColor: hexToRgba(color, (parseInt(highlightOpacity.value || 75, 10) / 100).toFixed(2)) });
+        return false;
+      });
+    }
+    function clearHighlightAction() {
+      if (!activeBox) return;
+      applyStyleToSelection({}, true);
+    }
+    function setAlignAction() { if (!activeBox) return; getEditor().style.textAlign = align.value; }
+    function setLineHeightAction() { if (!activeBox) return; const v = (parseInt(lineHeight.value || 135, 10) / 100).toFixed(2); getEditor().style.lineHeight = v; lineHeightValue.textContent = v; autoFitBox(activeBox); }
+    function createBox(content = '여기에 문장을 쓰세요.') {
+      boxCount += 1;
+      const box = document.createElement('div');
+      box.className = 'text-box';
+      box.dataset.id = String(boxCount);
+      box.style.left = `${50 + (boxCount - 1) * 18}px`;
+      box.style.top = `${50 + (boxCount - 1) * 18}px`;
 
-        // ② 🌟 새로 추가된 히든 스토리/스포일러 블록 삭제 함수
-        function cleanHiddenStory() {
-            if (!rawText) return;
-            let text = viewer.innerText;
+      const handle = document.createElement('div');
+      handle.className = 'move-handle';
+      handle.textContent = '✥';
 
-            // 규칙 1: ![캐릭터]@ [표정:...][내면:...] 형태의 대괄호 블록 체인 삭제
-            // (줄바꿈이 섞여 있어도 잡아내도록 설정)
-            text = text.replace(/!\[[\s\S]*?\]@\s*(?:\[[\s\S]*?\]\s*)+/g, "");
+      const editor = document.createElement('div');
+      editor.className = 'editor';
+      editor.contentEditable = 'true';
+      editor.innerText = content;
+      editor.style.fontSize = '15pt';
+      editor.style.color = '#000000';
 
-            // 규칙 2: @Hidden Spoiler@ 부터 @END@ 까지의 블록 전체 삭제
-            text = text.replace(/@Hidden\s+Spoiler@[\s\S]*?@END@/gi, "");
+      box.appendChild(handle);
+      box.appendChild(editor);
+      stage.appendChild(box);
+      autoFitBox(box);
 
-            // 불필요하게 늘어난 빈 줄 압축
-            text = text.replace(/\n\s*\n\s*\n/g, "\n\n"); 
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setActiveBox(box, true);
+        dragging = true;
+        const rect = box.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+      });
+      box.addEventListener('click', (e) => { e.stopPropagation(); setActiveBox(box, true); });
+      editor.addEventListener('focus', () => setActiveBox(box, true));
+      editor.addEventListener('mouseup', captureSelection);
+      editor.addEventListener('keyup', captureSelection);
+      editor.addEventListener('input', () => { if (activeBox !== box) setActiveBox(box, true); autoFitBox(box); });
+      setActiveBox(box);
+      return box;
+    }
+    function getFontFormat(name) {
+      const ext = name.toLowerCase().split('.').pop();
+      if (ext === 'ttf') return 'truetype';
+      if (ext === 'otf') return 'opentype';
+      if (ext === 'woff') return 'woff';
+      if (ext === 'woff2') return 'woff2';
+      return '';
+    }
+    function escapeCssString(v) { return v.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+    function registerDynamicFont(fontName, srcUrl, format) {
+      const safeName = escapeCssString(fontName), formatText = format ? ` format('${format}')` : '';
+      dynamicFontStyle.textContent += `\n@font-face { font-family: '${safeName}'; src: url('${srcUrl}')${formatText}; font-weight: 400; font-style: normal; font-display: swap; }\n`;
+    }
+    function loadSavedFonts() {
+      let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
+      customFonts = saved.slice();
+      saved.forEach(item => registerDynamicFont(item.name, item.src, item.format || ''));
+      renderSavedFontList(saved);
+      renderFontButtons();
+    }
+    function saveFontEntry(entry) {
+      let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
+      saved = saved.filter(v => !(v.name === entry.name && v.src === entry.src));
+      saved.push(entry);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      customFonts = saved.slice();
+      renderSavedFontList(saved);
+      renderFontButtons();
+    }
+    function removeSavedFont(name) {
+      let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
+      saved = saved.filter(v => v.name !== name);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      customFonts = saved.slice();
+      renderSavedFontList(saved);
+      renderFontButtons();
+    }
+    function renderSavedFontList(saved) {
+      savedFontList.innerHTML = '';
+      saved.forEach(item => {
+        const chip = document.createElement('div'); chip.className = 'font-chip'; chip.textContent = item.name;
+        const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '삭제'; btn.addEventListener('click', () => removeSavedFont(item.name));
+        chip.appendChild(btn); savedFontList.appendChild(chip);
+      });
+    }
+    function renderFontButtons() {
+      fontButtons.innerHTML = '';
+      const list = [...BUILTIN_FONTS, ...customFonts.map(item => ({ label: item.name, value: `'${item.name}', Arial, sans-serif` }))];
+      list.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-btn';
+        btn.dataset.value = item.value;
+        btn.textContent = item.label;
+        btn.style.fontFamily = item.value;
+        btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('click', () => setFontFamilyAction(item.value));
+        fontButtons.appendChild(btn);
+      });
+      syncFontButtonsActive();
+    }
+    function syncFontButtonsActive() {
+      [...fontButtons.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.value === currentFontValue));
+    }
+    function buildFontSizePresets() {
+      fontSizePresets.innerHTML = '';
+      FONT_SIZE_PRESETS.forEach(size => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-btn';
+        btn.dataset.size = String(size);
+        btn.textContent = `${size}pt`;
+        btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('click', () => setFontSizeValue(size));
+        fontSizePresets.appendChild(btn);
+      });
+      syncFontSizePresetActive();
+    }
+    function syncFontSizePresetActive() {
+      const current = String(getCurrentFontSizeValue());
+      [...fontSizePresets.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.size === current));
+    }
+    function buildSwatches() {
+      swatchGrid.innerHTML = '';
+      PRESET_COLORS.forEach(color => {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'swatch-btn'; btn.style.background = color; btn.dataset.color = color;
+        btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('click', () => setHighlightAction(color));
+        swatchGrid.appendChild(btn);
+      });
+      syncSwatchActive();
+    }
+    function syncSwatchActive() { [...swatchGrid.querySelectorAll('.swatch-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.color.toLowerCase() === highlightColor.value.toLowerCase())); }
 
-            parseAndRenderText(text);
-            alert("히든 스토리 및 스포일러 설정 블록이 깔끔하게 삭제되었습니다.");
-        }
+    document.addEventListener('selectionchange', () => { if (!activeBox) return; captureSelection(); });
+    bgUploadBtn.addEventListener('click', () => bgUpload.click());
+    bgUpload.addEventListener('change', (e) => {
+      const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader();
+      reader.onload = () => { const img = new Image(); img.onload = () => { setStageSize(img.naturalWidth, img.naturalHeight); stage.style.backgroundImage = `url('${reader.result}')`; document.querySelectorAll('.text-box').forEach(box => autoFitBox(box)); }; img.src = reader.result; };
+      reader.readAsDataURL(file);
+    });
+    addBoxBtn.addEventListener('click', () => createBox('새 텍스트'));
+    deleteBoxBtn.addEventListener('click', () => { if (!activeBox) return; const others = [...document.querySelectorAll('.text-box')].filter(el => el !== activeBox); activeBox.remove(); activeBox = null; savedRange = null; if (others[0]) setActiveBox(others[0]); else createBox('새 텍스트'); });
+    [fontSizeDown, fontSizeUp, boldBtn, clearHighlightBtn].forEach(el => el.addEventListener('mousedown', e => e.preventDefault()));
+    fontSizeDown.addEventListener('click', () => setFontSizeValue(getCurrentFontSizeValue() - 1));
+    fontSizeUp.addEventListener('click', () => setFontSizeValue(getCurrentFontSizeValue() + 1));
+    textColor.addEventListener('input', setTextColorAction);
+    align.addEventListener('change', setAlignAction);
+    boldBtn.addEventListener('click', setBoldAction);
+    lineHeight.addEventListener('input', setLineHeightAction);
+    highlightColor.addEventListener('input', () => { syncSwatchActive(); setHighlightAction(highlightColor.value); });
+    highlightOpacity.addEventListener('input', () => { highlightOpacityValue.textContent = `${highlightOpacity.value}%`; });
+    clearHighlightBtn.addEventListener('click', clearHighlightAction);
+    addLocalFontBtn.addEventListener('click', () => {
+      const file = fontUpload.files?.[0]; if (!file) { alert('먼저 폰트 파일을 선택해 주세요.'); return; }
+      const name = (customFontName.value || file.name.replace(/\.[^.]+$/, '')).trim(); const format = getFontFormat(file.name); const reader = new FileReader();
+      reader.onload = () => { const src = reader.result; registerDynamicFont(name, src, format); saveFontEntry({ name, src, format, type: 'local' }); setFontFamilyAction(`'${name}', Arial, sans-serif`); };
+      reader.readAsDataURL(file);
+    });
+    addWebFontBtn.addEventListener('click', () => {
+      const url = (webFontUrl.value || '').trim(); if (!url) { alert('웹폰트 URL을 입력해 주세요.'); return; }
+      const name = (customFontName.value || `추가폰트${customFonts.length + 1}`).trim(); const format = getFontFormat(url); registerDynamicFont(name, url, format); saveFontEntry({ name, src: url, format, type: 'web' }); setFontFamilyAction(`'${name}', Arial, sans-serif`);
+    });
+    stage.addEventListener('click', (e) => { if (e.target === stage) clearActiveBox(); });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging || !activeBox) return; const rect = stage.getBoundingClientRect(); const x = Math.max(0, Math.round(e.clientX - rect.left - dragOffsetX)); const y = Math.max(0, Math.round(e.clientY - rect.top - dragOffsetY)); activeBox.style.left = `${x}px`; activeBox.style.top = `${y}px`; autoFitBox(activeBox);
+    });
+    window.addEventListener('mouseup', () => dragging = false);
+    saveBtn.addEventListener('click', async () => {
+      const prev = activeBox; document.querySelectorAll('.text-box').forEach(el => el.classList.remove('active')); saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
+      try { const canvas = await html2canvas(stage, { scale: 2, useCORS: true, backgroundColor: null }); const url = canvas.toDataURL('image/png'); const link = document.createElement('a'); link.href = url; link.download = `${(fileName.value || 'my-design').trim() || 'my-design'}.png`; link.click(); }
+      catch { alert('PNG 저장 중 오류가 발생했습니다.'); }
+      finally { if (prev) prev.classList.add('active'); saveBtn.disabled = false; saveBtn.textContent = 'PNG 저장'; }
+    });
 
-        function addRuleRow() {
-            const container = document.getElementById('rulesList');
-            const row = document.createElement('div');
-            row.className = 'rule-row';
-            row.innerHTML = `<input type="text" class="rule-find" placeholder="찾을 단어"><span style="align-self:center; font-size:11px;">→</span><input type="text" class="rule-replace" placeholder="(공백이면 삭제)"><button class="btn-del-rule" onclick="this.parentElement.remove()">X</button>`;
-            container.appendChild(row);
-        }
-
-        function applyCustomRules() {
-            let currentText = viewer.innerText;
-            const findInputs = document.querySelectorAll('.rule-find');
-            const replaceInputs = document.querySelectorAll('.rule-replace');
-            let count = 0;
-
-            for (let i = 0; i < findInputs.length; i++) {
-                let findTarget = findInputs[i].value;
-                let replaceValue = replaceInputs[i].value;
-                if (findTarget) {
-                    let escapedTarget = findTarget.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    let regex = new RegExp(escapedTarget, 'g');
-                    currentText = currentText.replace(regex, replaceValue);
-                    count++;
-                }
-            }
-            if (count === 0) return alert("입력된 규칙이 없습니다.");
-            parseAndRenderText(currentText);
-            alert("치환 규칙이 적용되었습니다!");
-        }
-
-        function changeTheme(theme) { document.body.className = ''; if (theme !== 'paper') document.body.classList.add('theme-' + theme); }
-        function adjustFontSize(value) { currentFontSize += value; if (currentFontSize < 12) currentFontSize = 12; if (currentFontSize > 28) currentFontSize = 28; viewer.style.fontSize = currentFontSize + 'px'; }
-    </script>
+    setStageSize(1280, 720);
+    highlightOpacityValue.textContent = `${highlightOpacity.value}%`;
+    buildSwatches();
+    buildFontSizePresets();
+    loadSavedFonts();
+    createBox();
+    syncToolbarFromBox();
+  </script>
 </body>
 </html>
