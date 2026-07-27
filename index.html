@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>간단 텍스트 편집기 v7</title>
+  <title>간단 텍스트 편집기 v11</title>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style id="dynamicFontStyle">
     @font-face {
@@ -56,8 +56,8 @@
     #stage { position: relative; width: 1280px; height: 720px; background: #dde8f7 center/100% 100% no-repeat; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 50px rgba(87,125,179,.20); flex: 0 0 auto; }
     .text-box { position: absolute; z-index: 20; display: inline-block; width: fit-content; min-width: 16px; max-width: calc(100% - 12px); min-height: 16px; padding: 4px 6px; border: 2px dashed transparent; border-radius: 12px; background: transparent; transition: border-color .12s ease, background-color .12s ease, box-shadow .12s ease; }
     .text-box.active { border-color: rgba(54,125,255,.75); background: rgba(255,255,255,.18); box-shadow: 0 0 0 4px rgba(94,153,255,.12); }
-    .image-box { position: absolute; z-index: 10; border: 2px dashed transparent; border-radius: 18px; transition: border-color .12s ease, box-shadow .12s ease; }
-    .text-resize-handle { left: -11px; bottom: -11px; cursor: ew-resize; }
+    .image-box { position: absolute; z-index: 30; border: 2px dashed transparent; border-radius: 18px; transition: border-color .12s ease, box-shadow .12s ease; }
+    .text-resize-handle { left: 50%; right: auto; bottom: -14px; transform: translateX(-50%); cursor: ew-resize; width: 42px; border-radius: 999px; }
     .image-box.active { border-color: rgba(54,125,255,.75); box-shadow: 0 0 0 4px rgba(94,153,255,.12); }
     .image-frame { width: 100%; height: 100%; overflow: hidden; border-radius: inherit; background: rgba(255,255,255,.12); }
     .image-frame img { width: 100%; height: 100%; display: block; object-fit: fill; user-select: none; -webkit-user-drag: none; }
@@ -66,7 +66,7 @@
       display: none; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 6px 14px rgba(70,104,160,.15); user-select: none;
     }
     .move-handle { top: -11px; right: -11px; cursor: move; }
-    .resize-handle { right: -11px; bottom: -11px; cursor: nwse-resize; }
+    .resize-handle { right: -11px; bottom: -11px; cursor: nwse-resize; transform: none; }
     .text-box.active .move-handle, .text-box.active .text-resize-handle, .image-box.active .move-handle, .image-box.active .resize-handle { display: flex; }
     .editor { display: inline-block; width: auto; min-width: 1px; min-height: 1em; max-width: 100%; outline: none; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; cursor: text; color: #000000; text-shadow: none; font-family: 'GangwonEducationModuche', Arial, sans-serif; font-size: 15pt; line-height: 1.35; text-align: left; font-weight: 400; background-color: transparent; }
     .bottom-tools { margin-top: 18px; }
@@ -94,7 +94,7 @@
           <button class="btn danger" id="deleteImageBtn" type="button">현재 사진 삭제</button>
         </div>
         <input type="file" id="photoUpload" accept="image/*" style="display:none;" />
-        <div class="hint">텍스트는 왼쪽 아래 손잡이로 박스 너비를 조절하고, 사진은 오른쪽 아래 손잡이로 크기조정됩니다.</div>
+        <div class="hint">텍스트는 아래쪽 가운데 손잡이로 박스 너비를 조절하고, 사진은 오른쪽 아래 손잡이로 크기조정됩니다.</div>
       </div>
 
       <div class="group">
@@ -214,7 +214,12 @@
           <div style="margin-top:12px;">
             <input type="file" id="bgUpload" accept="image/*" style="display:none;" />
             <button class="btn secondary small" id="bgUploadBtn" type="button">불러오기</button>
-            <div class="meta" id="imageInfo">현재 배경 크기: 1280 × 720</div>
+            <div class="row" style="margin-top:10px;">
+              <div class="field"><label for="canvasWidth">캔버스 가로</label><input type="text" id="canvasWidth" value="1280" inputmode="numeric" /></div>
+              <div class="field"><label for="canvasHeight">캔버스 세로</label><input type="text" id="canvasHeight" value="720" inputmode="numeric" /></div>
+            </div>
+            <button class="btn secondary" id="applyCanvasSizeBtn" type="button">캔버스 크기 적용</button>
+            <div class="meta" id="imageInfo">현재 캔버스 크기: 1280 × 720</div>
           </div>
         </details>
       </div>
@@ -239,6 +244,9 @@
     const bgUpload = document.getElementById('bgUpload');
     const bgUploadBtn = document.getElementById('bgUploadBtn');
     const imageInfo = document.getElementById('imageInfo');
+    const canvasWidth = document.getElementById('canvasWidth');
+    const canvasHeight = document.getElementById('canvasHeight');
+    const applyCanvasSizeBtn = document.getElementById('applyCanvasSizeBtn');
     const addBoxBtn = document.getElementById('addBoxBtn');
     const deleteBoxBtn = document.getElementById('deleteBoxBtn');
     const addPhotoBtn = document.getElementById('addPhotoBtn');
@@ -281,7 +289,15 @@
     let dragTarget = null, dragMode = '', dragOffsetX = 0, dragOffsetY = 0;
     let resizeTarget = null, resizeStartX = 0, resizeStartY = 0, resizeStartWidth = 0, resizeStartHeight = 0, resizeAspect = 1;
 
-    function setStageSize(w, h) { stage.style.width = `${w}px`; stage.style.height = `${h}px`; imageInfo.textContent = `현재 배경 크기: ${w} × ${h}`; }
+    function setStageSize(w, h) {
+      const width = Math.max(200, Math.min(6000, Math.round(Number(w) || 1280)));
+      const height = Math.max(200, Math.min(6000, Math.round(Number(h) || 720)));
+      stage.style.width = `${width}px`; stage.style.height = `${height}px`;
+      canvasWidth.value = width; canvasHeight.value = height;
+      imageInfo.textContent = `현재 캔버스 크기: ${width} × ${height}`;
+      document.querySelectorAll('.text-box').forEach(box => autoFitBox(box));
+      document.querySelectorAll('.image-box').forEach(box => clampImageBox(box));
+    }
     function getEditor(box = activeBox) { return box ? box.querySelector('.editor') : null; }
     function hexToRgba(hex, alpha) { const v = hex.replace('#',''); const n = parseInt(v,16); return `rgba(${(n>>16)&255}, ${(n>>8)&255}, ${n&255}, ${alpha})`; }
     function autoFitBox(box = activeBox) {
@@ -463,9 +479,9 @@
     }
     function createBox(content = '여기에 문장을 쓰세요.') {
       boxCount += 1;
-      const box = document.createElement('div'); box.className = 'text-box'; box.dataset.id = String(boxCount); box.style.left = `${50 + (boxCount - 1) * 18}px`; box.style.top = `${50 + (boxCount - 1) * 18}px`;
+      const box = document.createElement('div'); box.className = 'text-box'; box.dataset.id = String(boxCount); box.dataset.manualWidth = '1'; box.style.left = `${50 + (boxCount - 1) * 18}px`; box.style.top = `${50 + (boxCount - 1) * 18}px`; box.style.width = '260px';
       const handle = document.createElement('div'); handle.className = 'move-handle'; handle.textContent = '✥';
-      const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle text-resize-handle'; resizeHandle.textContent = '↔';
+      const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle text-resize-handle'; resizeHandle.textContent = '가로'; resizeHandle.title = '텍스트 박스 너비 조절';
       const editor = document.createElement('div'); editor.className = 'editor'; editor.contentEditable = 'true'; editor.innerText = content; editor.style.fontSize = '15pt'; editor.style.color = '#000000';
       box.appendChild(handle); box.appendChild(resizeHandle); box.appendChild(editor); stage.appendChild(box); autoFitBox(box);
       handle.addEventListener('mousedown', (e) => { setActiveBox(box, true); startMove(box, e); });
@@ -547,9 +563,10 @@
     bgUploadBtn.addEventListener('click', () => bgUpload.click());
     bgUpload.addEventListener('change', (e) => {
       const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader();
-      reader.onload = () => { const img = new Image(); img.onload = () => { setStageSize(img.naturalWidth, img.naturalHeight); stage.style.backgroundImage = `url('${reader.result}')`; document.querySelectorAll('.text-box').forEach(box => autoFitBox(box)); document.querySelectorAll('.image-box').forEach(box => clampImageBox(box)); }; img.src = reader.result; };
+      reader.onload = () => { stage.style.backgroundImage = `url('${reader.result}')`; };
       reader.readAsDataURL(file);
     });
+    applyCanvasSizeBtn.addEventListener('click', () => setStageSize(canvasWidth.value, canvasHeight.value));
     addBoxBtn.addEventListener('click', () => createBox('새 텍스트'));
     deleteBoxBtn.addEventListener('click', () => { if (!activeBox) return; const others = [...document.querySelectorAll('.text-box')].filter(el => el !== activeBox); activeBox.remove(); activeBox = null; savedRange = null; if (others[0]) setActiveBox(others[0]); });
     addPhotoBtn.addEventListener('click', () => photoUpload.click());
