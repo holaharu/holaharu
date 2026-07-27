@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>간단 텍스트 편집기 v4</title>
+  <title>간단 텍스트 편집기 v7</title>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style id="dynamicFontStyle">
     @font-face {
@@ -17,7 +17,7 @@
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #eef4ff; color: #1d2a3a; font-family: Arial, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
-    .app { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+    .app { display: grid; grid-template-columns: 340px 1fr; min-height: 100vh; }
     .panel { padding: 18px; background: #f9fbff; border-right: 1px solid #d7e3f4; overflow-y: auto; box-shadow: 8px 0 24px rgba(60,90,140,.08); }
     h1 { margin: 0 0 8px; font-size: 22px; color: #203252; }
     .lead { margin: 0 0 16px; font-size: 13px; line-height: 1.55; color: #56708f; }
@@ -33,21 +33,19 @@
     input[type="text"], select {
       border: 1px solid #cfe0f2; background: #fff; color: #18304f; border-radius: 11px; padding: 10px 12px; font-size: 14px; outline: none;
     }
+    input[type="range"] { width: 100%; }
     .btn { border: 0; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 700; cursor: pointer; background: #4b8dff; color: white; box-shadow: 0 8px 18px rgba(75,141,255,.22); }
     .btn.secondary { background: #edf4ff; color: #29508b; box-shadow: none; border: 1px solid #cfe0f2; }
     .btn.danger { background: #ff6f91; box-shadow: 0 8px 18px rgba(255,111,145,.18); }
     .btn.small { width: auto; padding: 8px 12px; font-size: 13px; }
+    .btn.toggle-on { background: #dceaff; border-color: #7aa7ff; color: #214c93; }
     .hint, .meta { margin-top: 8px; font-size: 12px; line-height: 1.5; color: #6b82a0; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip-btn {
-      width: auto; padding: 8px 10px; border-radius: 999px; border: 1px solid #cfe0f2; background: #fff; color: #294064; cursor: pointer; font-size: 13px;
-    }
+    .chip-btn { width: auto; padding: 8px 10px; border-radius: 999px; border: 1px solid #cfe0f2; background: #fff; color: #294064; cursor: pointer; font-size: 13px; }
     .chip-btn.active { background: #edf4ff; border-color: #7aa7ff; box-shadow: 0 0 0 3px rgba(122,167,255,.15); }
     .size-row { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; }
-    .size-display {
-      display: flex; align-items: center; justify-content: center; border: 1px solid #cfe0f2; background: #fff; border-radius: 11px; color: #18304f; font-size: 14px; min-height: 40px;
-    }
+    .size-display { display: flex; align-items: center; justify-content: center; border: 1px solid #cfe0f2; background: #fff; border-radius: 11px; color: #18304f; font-size: 14px; min-height: 40px; }
     .swatch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
     .swatch-btn { height: 28px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
     .swatch-btn.active { border-color: #4b8dff; box-shadow: 0 0 0 3px rgba(75,141,255,.18); }
@@ -56,13 +54,20 @@
     .font-chip button { width: auto; border: 0; background: transparent; color: #7a8fb0; cursor: pointer; padding: 0; font-size: 12px; }
     .stage-area { padding: 24px; overflow: auto; background: linear-gradient(180deg,#f3f8ff 0%,#e7f0ff 100%); display: flex; justify-content: center; align-items: flex-start; }
     #stage { position: relative; width: 1280px; height: 720px; background: #dde8f7 center/100% 100% no-repeat; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 50px rgba(87,125,179,.20); flex: 0 0 auto; }
-    .text-box { position: absolute; display: inline-block; width: fit-content; min-width: 16px; max-width: calc(100% - 12px); min-height: 16px; padding: 4px 6px; border: 2px dashed transparent; border-radius: 12px; background: transparent; transition: border-color .12s ease, background-color .12s ease, box-shadow .12s ease; }
+    .text-box { position: absolute; z-index: 20; display: inline-block; width: fit-content; min-width: 16px; max-width: calc(100% - 12px); min-height: 16px; padding: 4px 6px; border: 2px dashed transparent; border-radius: 12px; background: transparent; transition: border-color .12s ease, background-color .12s ease, box-shadow .12s ease; }
     .text-box.active { border-color: rgba(54,125,255,.75); background: rgba(255,255,255,.18); box-shadow: 0 0 0 4px rgba(94,153,255,.12); }
-    .move-handle {
-      position: absolute; top: -11px; right: -11px; width: 24px; height: 24px; border-radius: 999px; border: 1px solid #b9cff1; background: #fff; color: #5077b6;
-      display: none; align-items: center; justify-content: center; font-size: 13px; cursor: move; box-shadow: 0 6px 14px rgba(70,104,160,.15); user-select: none;
+    .image-box { position: absolute; z-index: 10; border: 2px dashed transparent; border-radius: 18px; transition: border-color .12s ease, box-shadow .12s ease; }
+    .text-resize-handle { left: -11px; bottom: -11px; cursor: ew-resize; }
+    .image-box.active { border-color: rgba(54,125,255,.75); box-shadow: 0 0 0 4px rgba(94,153,255,.12); }
+    .image-frame { width: 100%; height: 100%; overflow: hidden; border-radius: inherit; background: rgba(255,255,255,.12); }
+    .image-frame img { width: 100%; height: 100%; display: block; object-fit: fill; user-select: none; -webkit-user-drag: none; }
+    .move-handle, .resize-handle {
+      position: absolute; width: 24px; height: 24px; border-radius: 999px; border: 1px solid #b9cff1; background: #fff; color: #5077b6;
+      display: none; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 6px 14px rgba(70,104,160,.15); user-select: none;
     }
-    .text-box.active .move-handle { display: flex; }
+    .move-handle { top: -11px; right: -11px; cursor: move; }
+    .resize-handle { right: -11px; bottom: -11px; cursor: nwse-resize; }
+    .text-box.active .move-handle, .text-box.active .text-resize-handle, .image-box.active .move-handle, .image-box.active .resize-handle { display: flex; }
     .editor { display: inline-block; width: auto; min-width: 1px; min-height: 1em; max-width: 100%; outline: none; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; cursor: text; color: #000000; text-shadow: none; font-family: 'GangwonEducationModuche', Arial, sans-serif; font-size: 15pt; line-height: 1.35; text-align: left; font-weight: 400; background-color: transparent; }
     .bottom-tools { margin-top: 18px; }
     @media (max-width: 1100px) {
@@ -76,19 +81,24 @@
   <div class="app">
     <aside class="panel">
       <h1>간단 편집기</h1>
-      <p class="lead">폰트와 크기는 클릭형 버튼으로 바꿔서 선택이 안 풀리게 했고, 박스 이동도 손잡이로만 되게 바꿨습니다.</p>
+      <p class="lead">배경 위에 사진을 올리고, 이동·크기조정·모서리·그림자·테두리까지 바로 다룰 수 있게 추가했습니다.</p>
 
       <div class="group">
-        <h2>텍스트 박스</h2>
+        <h2>요소 추가</h2>
         <div class="row">
           <button class="btn" id="addBoxBtn" type="button">텍스트 박스 추가</button>
-          <button class="btn danger" id="deleteBoxBtn" type="button">현재 박스 삭제</button>
+          <button class="btn secondary" id="addPhotoBtn" type="button">사진 추가</button>
         </div>
-        <div class="hint">박스 이동은 오른쪽 위 동그란 손잡이로만 됩니다.</div>
+        <div class="row" style="margin-top:10px;">
+          <button class="btn danger" id="deleteBoxBtn" type="button">현재 텍스트 삭제</button>
+          <button class="btn danger" id="deleteImageBtn" type="button">현재 사진 삭제</button>
+        </div>
+        <input type="file" id="photoUpload" accept="image/*" style="display:none;" />
+        <div class="hint">텍스트는 왼쪽 아래 손잡이로 박스 너비를 조절하고, 사진은 오른쪽 아래 손잡이로 크기조정됩니다.</div>
       </div>
 
       <div class="group">
-        <h2>현재 박스 설정</h2>
+        <h2>현재 텍스트 설정</h2>
         <div class="field">
           <label>글씨체</label>
           <div class="chip-grid" id="fontButtons"></div>
@@ -140,6 +150,31 @@
             <div class="meta" id="highlightOpacityValue">75%</div>
           </div>
         </div>
+      </div>
+
+      <div class="group">
+        <h2>선택한 사진 설정</h2>
+        <div class="row">
+          <div class="field">
+            <label for="imageOpacity">투명도</label>
+            <input type="range" id="imageOpacity" min="10" max="100" value="100" />
+            <div class="meta" id="imageOpacityValue">100%</div>
+          </div>
+          <div class="field">
+            <label for="imageRadius">모서리</label>
+            <input type="range" id="imageRadius" min="0" max="60" value="18" />
+            <div class="meta" id="imageRadiusValue">18px</div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="imageBorderColor">테두리 색</label>
+          <input type="color" id="imageBorderColor" value="#ffffff" />
+        </div>
+        <div class="row">
+          <button class="btn secondary" id="toggleImageBorderBtn" type="button">테두리</button>
+          <button class="btn secondary" id="toggleImageShadowBtn" type="button">그림자</button>
+        </div>
+        <div class="hint">사진을 클릭한 뒤 조절하면 바로 반영됩니다.</div>
       </div>
 
       <div class="group">
@@ -206,6 +241,9 @@
     const imageInfo = document.getElementById('imageInfo');
     const addBoxBtn = document.getElementById('addBoxBtn');
     const deleteBoxBtn = document.getElementById('deleteBoxBtn');
+    const addPhotoBtn = document.getElementById('addPhotoBtn');
+    const deleteImageBtn = document.getElementById('deleteImageBtn');
+    const photoUpload = document.getElementById('photoUpload');
     const fontButtons = document.getElementById('fontButtons');
     const fontSizeDown = document.getElementById('fontSizeDown');
     const fontSizeUp = document.getElementById('fontSizeUp');
@@ -221,6 +259,13 @@
     const highlightOpacity = document.getElementById('highlightOpacity');
     const highlightOpacityValue = document.getElementById('highlightOpacityValue');
     const clearHighlightBtn = document.getElementById('clearHighlightBtn');
+    const imageOpacity = document.getElementById('imageOpacity');
+    const imageOpacityValue = document.getElementById('imageOpacityValue');
+    const imageRadius = document.getElementById('imageRadius');
+    const imageRadiusValue = document.getElementById('imageRadiusValue');
+    const imageBorderColor = document.getElementById('imageBorderColor');
+    const toggleImageBorderBtn = document.getElementById('toggleImageBorderBtn');
+    const toggleImageShadowBtn = document.getElementById('toggleImageShadowBtn');
     const fileName = document.getElementById('fileName');
     const saveBtn = document.getElementById('saveBtn');
     const dynamicFontStyle = document.getElementById('dynamicFontStyle');
@@ -231,9 +276,10 @@
     const addWebFontBtn = document.getElementById('addWebFontBtn');
     const savedFontList = document.getElementById('savedFontList');
 
-    let boxCount = 0, activeBox = null, dragging = false, dragOffsetX = 0, dragOffsetY = 0, savedRange = null;
-    let currentFontValue = BUILTIN_FONTS[0].value;
-    let customFonts = [];
+    let boxCount = 0, imageCount = 0, activeBox = null, activeImage = null, savedRange = null;
+    let currentFontValue = BUILTIN_FONTS[0].value, customFonts = [];
+    let dragTarget = null, dragMode = '', dragOffsetX = 0, dragOffsetY = 0;
+    let resizeTarget = null, resizeStartX = 0, resizeStartY = 0, resizeStartWidth = 0, resizeStartHeight = 0, resizeAspect = 1;
 
     function setStageSize(w, h) { stage.style.width = `${w}px`; stage.style.height = `${h}px`; imageInfo.textContent = `현재 배경 크기: ${w} × ${h}`; }
     function getEditor(box = activeBox) { return box ? box.querySelector('.editor') : null; }
@@ -241,18 +287,42 @@
     function autoFitBox(box = activeBox) {
       if (!box) return; const editor = getEditor(box); if (!editor) return;
       const stageW = stage.clientWidth, left = parseInt(box.style.left || '0', 10), available = Math.max(80, stageW - left - 12);
-      box.style.maxWidth = `${available}px`; editor.style.maxWidth = '100%'; box.style.width = 'fit-content';
+      box.style.maxWidth = `${available}px`; editor.style.maxWidth = '100%';
+      if (box.dataset.manualWidth === '1') {
+        const currentWidth = parseInt(box.style.width || '260', 10);
+        const width = Math.max(80, Math.min(available, currentWidth || 260));
+        box.style.width = `${width}px`;
+        editor.style.width = '100%';
+      } else {
+        box.style.width = 'fit-content';
+        editor.style.width = 'auto';
+      }
     }
     function rgbToHex(color) {
       if (!color) return '#000000'; if (color.startsWith('#')) return color; const nums = color.match(/\d+/g); if (!nums) return '#000000';
       return '#' + nums.slice(0,3).map(v => Number(v).toString(16).padStart(2,'0')).join('');
     }
+    function clearTextSelectionState() {
+      document.querySelectorAll('.text-box').forEach(el => el.classList.remove('active'));
+      activeBox = null; savedRange = null;
+    }
+    function clearImageSelectionState() {
+      document.querySelectorAll('.image-box').forEach(el => el.classList.remove('active'));
+      activeImage = null;
+    }
     function setActiveBox(box, preserveRange = false) {
       document.querySelectorAll('.text-box').forEach(el => el.classList.remove('active'));
+      clearImageSelectionState();
       const sameBox = activeBox === box; activeBox = box; if (!preserveRange || !sameBox) savedRange = null;
       if (activeBox) { activeBox.classList.add('active'); syncToolbarFromBox(); }
     }
-    function clearActiveBox() { if (activeBox) activeBox.classList.remove('active'); activeBox = null; savedRange = null; }
+    function setActiveImage(box) {
+      clearTextSelectionState();
+      document.querySelectorAll('.image-box').forEach(el => el.classList.remove('active'));
+      activeImage = box;
+      if (activeImage) { activeImage.classList.add('active'); syncImageToolbar(); }
+    }
+    function clearAllSelection() { clearTextSelectionState(); clearImageSelectionState(); }
     function getCurrentFontSizeValue() {
       const text = fontSizeDisplay.textContent || '15pt';
       const n = parseInt(text, 10);
@@ -269,6 +339,39 @@
       lineHeightValue.textContent = (lineHeight.value / 100).toFixed(2);
       syncFontButtonsActive();
     }
+    function updateImageButtonStates() {
+      toggleImageBorderBtn.classList.toggle('toggle-on', !!(activeImage && activeImage.dataset.border === '1'));
+      toggleImageShadowBtn.classList.toggle('toggle-on', !!(activeImage && activeImage.dataset.shadow === '1'));
+    }
+    function syncImageToolbar() {
+      if (!activeImage) return;
+      const frame = activeImage.querySelector('.image-frame');
+      const opacity = Math.round(parseFloat(frame.style.opacity || '1') * 100);
+      const radius = parseInt(activeImage.style.borderRadius || '18', 10) || 0;
+      imageOpacity.value = opacity; imageOpacityValue.textContent = `${opacity}%`;
+      imageRadius.value = radius; imageRadiusValue.textContent = `${radius}px`;
+      imageBorderColor.value = rgbToHex(frame.style.borderColor || '#ffffff');
+      updateImageButtonStates();
+    }
+    function applyImageFrameStyle(box) {
+      if (!box) return;
+      const frame = box.querySelector('.image-frame');
+      frame.style.opacity = `${(parseInt(imageOpacity.value || '100', 10) / 100).toFixed(2)}`;
+      box.style.borderRadius = `${parseInt(imageRadius.value || '18', 10)}px`;
+      frame.style.borderRadius = box.style.borderRadius;
+      if (box.dataset.border === '1') frame.style.border = `4px solid ${imageBorderColor.value}`;
+      else frame.style.border = '0';
+      frame.style.boxShadow = box.dataset.shadow === '1' ? '0 18px 38px rgba(28,57,102,.28)' : 'none';
+      syncImageToolbar();
+    }
+    function clampImageBox(box) {
+      if (!box) return;
+      const maxX = Math.max(0, stage.clientWidth - box.offsetWidth - 4);
+      const maxY = Math.max(0, stage.clientHeight - box.offsetHeight - 4);
+      const x = Math.max(0, Math.min(maxX, parseInt(box.style.left || '0', 10)));
+      const y = Math.max(0, Math.min(maxY, parseInt(box.style.top || '0', 10)));
+      box.style.left = `${x}px`; box.style.top = `${y}px`;
+    }
     function captureSelection() {
       const editor = getEditor(); const sel = window.getSelection();
       if (!editor || !sel || sel.rangeCount === 0) return;
@@ -282,17 +385,8 @@
       if (!editor || !sel || !savedRange) return false;
       try { sel.removeAllRanges(); sel.addRange(savedRange); return true; } catch { return false; }
     }
-    function unwrapSpan(span) {
-      const parent = span.parentNode;
-      while (span.firstChild) parent.insertBefore(span.firstChild, span);
-      parent.removeChild(span);
-    }
-    function unwrapSpansByMatch(root, matcher) {
-      [...root.querySelectorAll('span')].forEach(span => {
-        if (!matcher(span)) return;
-        unwrapSpan(span);
-      });
-    }
+    function unwrapSpan(span) { const parent = span.parentNode; while (span.firstChild) parent.insertBefore(span.firstChild, span); parent.removeChild(span); }
+    function unwrapSpansByMatch(root, matcher) { [...root.querySelectorAll('span')].forEach(span => { if (!matcher(span)) return; unwrapSpan(span); }); }
     function cleanStyledSpans(root, styleKeys) {
       [...root.querySelectorAll('span')].forEach(span => {
         styleKeys.forEach(key => { span.style[key] = ''; });
@@ -320,124 +414,90 @@
         const fragment = document.createDocumentFragment();
         while (span.firstChild) fragment.appendChild(span.firstChild);
         range.insertNode(fragment);
-      } else {
-        range.insertNode(span);
-      }
+      } else { range.insertNode(span); }
       sel.removeAllRanges();
-      savedRange = null;
-      autoFitBox(activeBox);
-      return true;
+      savedRange = null; autoFitBox(activeBox); return true;
     }
     function applyOrSetBox(setter) {
       if (!activeBox) return;
       const applied = setter(true);
-      if (!applied) {
-        setter(false);
-        autoFitBox(activeBox);
-      }
+      if (!applied) { setter(false); autoFitBox(activeBox); }
     }
     function setFontFamilyAction(value) {
-      currentFontValue = value;
-      syncFontButtonsActive();
-      applyOrSetBox((selectionMode) => {
-        if (selectionMode) return applyStyleToSelection({ fontFamily: value });
-        getEditor().style.fontFamily = value; return false;
-      });
+      currentFontValue = value; syncFontButtonsActive();
+      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ fontFamily: value }); getEditor().style.fontFamily = value; return false; });
     }
     function setFontSizeValue(value) {
-      const safe = Math.max(6, Math.min(200, value));
-      setFontSizeDisplay(safe);
-      applyOrSetBox((selectionMode) => {
-        if (selectionMode) return applyStyleToSelection({ fontSize: `${safe}pt` });
-        getEditor().style.fontSize = `${safe}pt`; return false;
-      });
+      const safe = Math.max(6, Math.min(200, value)); setFontSizeDisplay(safe);
+      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ fontSize: `${safe}pt` }); getEditor().style.fontSize = `${safe}pt`; return false; });
     }
     function setTextColorAction() {
       const value = textColor.value;
-      applyOrSetBox((selectionMode) => {
-        if (selectionMode) return applyStyleToSelection({ color: value });
-        getEditor().style.color = value; return false;
-      });
+      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ color: value }); getEditor().style.color = value; return false; });
     }
     function setBoldAction() {
-      if (!activeBox) return;
-      const editor = getEditor();
-      editor.focus();
-      const restored = restoreSavedSelection();
-      const sel = window.getSelection();
+      if (!activeBox) return; const editor = getEditor(); editor.focus();
+      const restored = restoreSavedSelection(); const sel = window.getSelection();
       const hasSelection = !!(restored && sel && sel.rangeCount && sel.toString().trim() !== '');
-      if (hasSelection) {
-        document.execCommand('styleWithCSS', false, true);
-        document.execCommand('bold');
-        savedRange = null;
-        autoFitBox(activeBox);
-        return;
-      }
-      const current = editor.style.fontWeight || '400';
-      editor.style.fontWeight = (current === '700' || current === 'bold') ? '400' : '700';
-      autoFitBox(activeBox);
+      if (hasSelection) { document.execCommand('styleWithCSS', false, true); document.execCommand('bold'); savedRange = null; autoFitBox(activeBox); return; }
+      const current = editor.style.fontWeight || '400'; editor.style.fontWeight = (current === '700' || current === 'bold') ? '400' : '700'; autoFitBox(activeBox);
     }
     function setHighlightAction(color) {
       highlightColor.value = color; syncSwatchActive();
-      applyOrSetBox((selectionMode) => {
-        if (selectionMode) return applyStyleToSelection({ backgroundColor: hexToRgba(color, (parseInt(highlightOpacity.value || 75, 10) / 100).toFixed(2)) });
-        return false;
-      });
+      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ backgroundColor: hexToRgba(color, (parseInt(highlightOpacity.value || 75, 10) / 100).toFixed(2)) }); return false; });
     }
-    function clearHighlightAction() {
-      if (!activeBox) return;
-      applyStyleToSelection({}, true);
-    }
+    function clearHighlightAction() { if (!activeBox) return; applyStyleToSelection({}, true); }
     function setAlignAction() { if (!activeBox) return; getEditor().style.textAlign = align.value; }
     function setLineHeightAction() { if (!activeBox) return; const v = (parseInt(lineHeight.value || 135, 10) / 100).toFixed(2); getEditor().style.lineHeight = v; lineHeightValue.textContent = v; autoFitBox(activeBox); }
+    function startMove(box, e) {
+      e.preventDefault(); e.stopPropagation();
+      dragTarget = box; dragMode = 'move';
+      const rect = box.getBoundingClientRect(); dragOffsetX = e.clientX - rect.left; dragOffsetY = e.clientY - rect.top;
+    }
+    function startResize(box, e) {
+      e.preventDefault(); e.stopPropagation();
+      resizeTarget = box; dragMode = box.classList.contains('text-box') ? 'text-resize' : 'resize';
+      resizeStartX = e.clientX; resizeStartY = e.clientY; resizeStartWidth = box.offsetWidth; resizeStartHeight = box.offsetHeight;
+      resizeAspect = parseFloat(box.dataset.aspect || (resizeStartWidth / Math.max(1, resizeStartHeight)) || '1');
+      if (box.classList.contains('text-box')) box.dataset.manualWidth = '1';
+    }
     function createBox(content = '여기에 문장을 쓰세요.') {
       boxCount += 1;
-      const box = document.createElement('div');
-      box.className = 'text-box';
-      box.dataset.id = String(boxCount);
-      box.style.left = `${50 + (boxCount - 1) * 18}px`;
-      box.style.top = `${50 + (boxCount - 1) * 18}px`;
-
-      const handle = document.createElement('div');
-      handle.className = 'move-handle';
-      handle.textContent = '✥';
-
-      const editor = document.createElement('div');
-      editor.className = 'editor';
-      editor.contentEditable = 'true';
-      editor.innerText = content;
-      editor.style.fontSize = '15pt';
-      editor.style.color = '#000000';
-
-      box.appendChild(handle);
-      box.appendChild(editor);
-      stage.appendChild(box);
-      autoFitBox(box);
-
-      handle.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setActiveBox(box, true);
-        dragging = true;
-        const rect = box.getBoundingClientRect();
-        dragOffsetX = e.clientX - rect.left;
-        dragOffsetY = e.clientY - rect.top;
-      });
+      const box = document.createElement('div'); box.className = 'text-box'; box.dataset.id = String(boxCount); box.style.left = `${50 + (boxCount - 1) * 18}px`; box.style.top = `${50 + (boxCount - 1) * 18}px`;
+      const handle = document.createElement('div'); handle.className = 'move-handle'; handle.textContent = '✥';
+      const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle text-resize-handle'; resizeHandle.textContent = '↔';
+      const editor = document.createElement('div'); editor.className = 'editor'; editor.contentEditable = 'true'; editor.innerText = content; editor.style.fontSize = '15pt'; editor.style.color = '#000000';
+      box.appendChild(handle); box.appendChild(resizeHandle); box.appendChild(editor); stage.appendChild(box); autoFitBox(box);
+      handle.addEventListener('mousedown', (e) => { setActiveBox(box, true); startMove(box, e); });
+      resizeHandle.addEventListener('mousedown', (e) => { setActiveBox(box, true); startResize(box, e); });
+      resizeHandle.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); box.dataset.manualWidth = '0'; box.style.width = ''; autoFitBox(box); });
       box.addEventListener('click', (e) => { e.stopPropagation(); setActiveBox(box, true); });
       editor.addEventListener('focus', () => setActiveBox(box, true));
       editor.addEventListener('mouseup', captureSelection);
       editor.addEventListener('keyup', captureSelection);
       editor.addEventListener('input', () => { if (activeBox !== box) setActiveBox(box, true); autoFitBox(box); });
-      setActiveBox(box);
-      return box;
+      setActiveBox(box); return box;
+    }
+    function createImageBox(src, naturalWidth = 1200, naturalHeight = 800) {
+      imageCount += 1;
+      const box = document.createElement('div'); box.className = 'image-box'; box.dataset.id = `img-${imageCount}`; box.dataset.border = '0'; box.dataset.shadow = '0';
+      box.style.left = `${80 + (imageCount - 1) * 18}px`; box.style.top = `${80 + (imageCount - 1) * 18}px`;
+      const moveHandle = document.createElement('div'); moveHandle.className = 'move-handle'; moveHandle.textContent = '✥';
+      const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle'; resizeHandle.textContent = '↘';
+      const frame = document.createElement('div'); frame.className = 'image-frame';
+      const img = document.createElement('img'); img.src = src; img.alt = '추가한 사진'; img.draggable = false;
+      frame.appendChild(img); box.appendChild(moveHandle); box.appendChild(resizeHandle); box.appendChild(frame); stage.appendChild(box);
+      const width = Math.min(320, Math.max(140, naturalWidth)); const height = Math.max(100, Math.round(width * (naturalHeight / Math.max(1, naturalWidth))));
+      box.style.width = `${width}px`; box.style.height = `${height}px`; box.dataset.aspect = String(width / height); box.style.borderRadius = '18px'; frame.style.borderRadius = '18px';
+      moveHandle.addEventListener('mousedown', (e) => { setActiveImage(box); startMove(box, e); });
+      resizeHandle.addEventListener('mousedown', (e) => { setActiveImage(box); startResize(box, e); });
+      box.addEventListener('click', (e) => { e.stopPropagation(); setActiveImage(box); });
+      img.addEventListener('mousedown', (e) => { e.stopPropagation(); setActiveImage(box); });
+      applyImageFrameStyle(box); clampImageBox(box); setActiveImage(box); return box;
     }
     function getFontFormat(name) {
       const ext = name.toLowerCase().split('.').pop();
-      if (ext === 'ttf') return 'truetype';
-      if (ext === 'otf') return 'opentype';
-      if (ext === 'woff') return 'woff';
-      if (ext === 'woff2') return 'woff2';
-      return '';
+      if (ext === 'ttf') return 'truetype'; if (ext === 'otf') return 'opentype'; if (ext === 'woff') return 'woff'; if (ext === 'woff2') return 'woff2'; return '';
     }
     function escapeCssString(v) { return v.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
     function registerDynamicFont(fontName, srcUrl, format) {
@@ -446,82 +506,39 @@
     }
     function loadSavedFonts() {
       let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
-      customFonts = saved.slice();
-      saved.forEach(item => registerDynamicFont(item.name, item.src, item.format || ''));
-      renderSavedFontList(saved);
-      renderFontButtons();
+      customFonts = saved.slice(); saved.forEach(item => registerDynamicFont(item.name, item.src, item.format || '')); renderSavedFontList(saved); renderFontButtons();
     }
     function saveFontEntry(entry) {
       let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
-      saved = saved.filter(v => !(v.name === entry.name && v.src === entry.src));
-      saved.push(entry);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-      customFonts = saved.slice();
-      renderSavedFontList(saved);
-      renderFontButtons();
+      saved = saved.filter(v => !(v.name === entry.name && v.src === entry.src)); saved.push(entry); localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); customFonts = saved.slice(); renderSavedFontList(saved); renderFontButtons();
     }
     function removeSavedFont(name) {
       let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
-      saved = saved.filter(v => v.name !== name);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-      customFonts = saved.slice();
-      renderSavedFontList(saved);
-      renderFontButtons();
+      saved = saved.filter(v => v.name !== name); localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); customFonts = saved.slice(); renderSavedFontList(saved); renderFontButtons();
     }
     function renderSavedFontList(saved) {
       savedFontList.innerHTML = '';
-      saved.forEach(item => {
-        const chip = document.createElement('div'); chip.className = 'font-chip'; chip.textContent = item.name;
-        const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '삭제'; btn.addEventListener('click', () => removeSavedFont(item.name));
-        chip.appendChild(btn); savedFontList.appendChild(chip);
-      });
+      saved.forEach(item => { const chip = document.createElement('div'); chip.className = 'font-chip'; chip.textContent = item.name; const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '삭제'; btn.addEventListener('click', () => removeSavedFont(item.name)); chip.appendChild(btn); savedFontList.appendChild(chip); });
     }
     function renderFontButtons() {
       fontButtons.innerHTML = '';
       const list = [...BUILTIN_FONTS, ...customFonts.map(item => ({ label: item.name, value: `'${item.name}', Arial, sans-serif` }))];
       list.forEach(item => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip-btn';
-        btn.dataset.value = item.value;
-        btn.textContent = item.label;
-        btn.style.fontFamily = item.value;
-        btn.addEventListener('mousedown', e => e.preventDefault());
-        btn.addEventListener('click', () => setFontFamilyAction(item.value));
-        fontButtons.appendChild(btn);
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'chip-btn'; btn.dataset.value = item.value; btn.textContent = item.label; btn.style.fontFamily = item.value;
+        btn.addEventListener('mousedown', e => e.preventDefault()); btn.addEventListener('click', () => setFontFamilyAction(item.value)); fontButtons.appendChild(btn);
       });
       syncFontButtonsActive();
     }
-    function syncFontButtonsActive() {
-      [...fontButtons.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.value === currentFontValue));
-    }
+    function syncFontButtonsActive() { [...fontButtons.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.value === currentFontValue)); }
     function buildFontSizePresets() {
       fontSizePresets.innerHTML = '';
-      FONT_SIZE_PRESETS.forEach(size => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip-btn';
-        btn.dataset.size = String(size);
-        btn.textContent = `${size}pt`;
-        btn.addEventListener('mousedown', e => e.preventDefault());
-        btn.addEventListener('click', () => setFontSizeValue(size));
-        fontSizePresets.appendChild(btn);
-      });
+      FONT_SIZE_PRESETS.forEach(size => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'chip-btn'; btn.dataset.size = String(size); btn.textContent = `${size}pt`; btn.addEventListener('mousedown', e => e.preventDefault()); btn.addEventListener('click', () => setFontSizeValue(size)); fontSizePresets.appendChild(btn); });
       syncFontSizePresetActive();
     }
-    function syncFontSizePresetActive() {
-      const current = String(getCurrentFontSizeValue());
-      [...fontSizePresets.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.size === current));
-    }
+    function syncFontSizePresetActive() { const current = String(getCurrentFontSizeValue()); [...fontSizePresets.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.size === current)); }
     function buildSwatches() {
       swatchGrid.innerHTML = '';
-      PRESET_COLORS.forEach(color => {
-        const btn = document.createElement('button');
-        btn.type = 'button'; btn.className = 'swatch-btn'; btn.style.background = color; btn.dataset.color = color;
-        btn.addEventListener('mousedown', e => e.preventDefault());
-        btn.addEventListener('click', () => setHighlightAction(color));
-        swatchGrid.appendChild(btn);
-      });
+      PRESET_COLORS.forEach(color => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'swatch-btn'; btn.style.background = color; btn.dataset.color = color; btn.addEventListener('mousedown', e => e.preventDefault()); btn.addEventListener('click', () => setHighlightAction(color)); swatchGrid.appendChild(btn); });
       syncSwatchActive();
     }
     function syncSwatchActive() { [...swatchGrid.querySelectorAll('.swatch-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.color.toLowerCase() === highlightColor.value.toLowerCase())); }
@@ -530,12 +547,19 @@
     bgUploadBtn.addEventListener('click', () => bgUpload.click());
     bgUpload.addEventListener('change', (e) => {
       const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader();
-      reader.onload = () => { const img = new Image(); img.onload = () => { setStageSize(img.naturalWidth, img.naturalHeight); stage.style.backgroundImage = `url('${reader.result}')`; document.querySelectorAll('.text-box').forEach(box => autoFitBox(box)); }; img.src = reader.result; };
+      reader.onload = () => { const img = new Image(); img.onload = () => { setStageSize(img.naturalWidth, img.naturalHeight); stage.style.backgroundImage = `url('${reader.result}')`; document.querySelectorAll('.text-box').forEach(box => autoFitBox(box)); document.querySelectorAll('.image-box').forEach(box => clampImageBox(box)); }; img.src = reader.result; };
       reader.readAsDataURL(file);
     });
     addBoxBtn.addEventListener('click', () => createBox('새 텍스트'));
-    deleteBoxBtn.addEventListener('click', () => { if (!activeBox) return; const others = [...document.querySelectorAll('.text-box')].filter(el => el !== activeBox); activeBox.remove(); activeBox = null; savedRange = null; if (others[0]) setActiveBox(others[0]); else createBox('새 텍스트'); });
-    [fontSizeDown, fontSizeUp, boldBtn, clearHighlightBtn].forEach(el => el.addEventListener('mousedown', e => e.preventDefault()));
+    deleteBoxBtn.addEventListener('click', () => { if (!activeBox) return; const others = [...document.querySelectorAll('.text-box')].filter(el => el !== activeBox); activeBox.remove(); activeBox = null; savedRange = null; if (others[0]) setActiveBox(others[0]); });
+    addPhotoBtn.addEventListener('click', () => photoUpload.click());
+    photoUpload.addEventListener('change', (e) => {
+      const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader();
+      reader.onload = () => { const img = new Image(); img.onload = () => createImageBox(reader.result, img.naturalWidth, img.naturalHeight); img.src = reader.result; };
+      reader.readAsDataURL(file); photoUpload.value = '';
+    });
+    deleteImageBtn.addEventListener('click', () => { if (!activeImage) return; const next = [...document.querySelectorAll('.image-box')].filter(el => el !== activeImage)[0] || null; activeImage.remove(); activeImage = null; if (next) setActiveImage(next); else updateImageButtonStates(); });
+    [fontSizeDown, fontSizeUp, boldBtn, clearHighlightBtn, toggleImageBorderBtn, toggleImageShadowBtn].forEach(el => el.addEventListener('mousedown', e => e.preventDefault()));
     fontSizeDown.addEventListener('click', () => setFontSizeValue(getCurrentFontSizeValue() - 1));
     fontSizeUp.addEventListener('click', () => setFontSizeValue(getCurrentFontSizeValue() + 1));
     textColor.addEventListener('input', setTextColorAction);
@@ -545,6 +569,11 @@
     highlightColor.addEventListener('input', () => { syncSwatchActive(); setHighlightAction(highlightColor.value); });
     highlightOpacity.addEventListener('input', () => { highlightOpacityValue.textContent = `${highlightOpacity.value}%`; });
     clearHighlightBtn.addEventListener('click', clearHighlightAction);
+    imageOpacity.addEventListener('input', () => { imageOpacityValue.textContent = `${imageOpacity.value}%`; if (activeImage) applyImageFrameStyle(activeImage); });
+    imageRadius.addEventListener('input', () => { imageRadiusValue.textContent = `${imageRadius.value}px`; if (activeImage) applyImageFrameStyle(activeImage); });
+    imageBorderColor.addEventListener('input', () => { if (activeImage) applyImageFrameStyle(activeImage); });
+    toggleImageBorderBtn.addEventListener('click', () => { if (!activeImage) return; activeImage.dataset.border = activeImage.dataset.border === '1' ? '0' : '1'; applyImageFrameStyle(activeImage); });
+    toggleImageShadowBtn.addEventListener('click', () => { if (!activeImage) return; activeImage.dataset.shadow = activeImage.dataset.shadow === '1' ? '0' : '1'; applyImageFrameStyle(activeImage); });
     addLocalFontBtn.addEventListener('click', () => {
       const file = fontUpload.files?.[0]; if (!file) { alert('먼저 폰트 파일을 선택해 주세요.'); return; }
       const name = (customFontName.value || file.name.replace(/\.[^.]+$/, '')).trim(); const format = getFontFormat(file.name); const reader = new FileReader();
@@ -555,25 +584,63 @@
       const url = (webFontUrl.value || '').trim(); if (!url) { alert('웹폰트 URL을 입력해 주세요.'); return; }
       const name = (customFontName.value || `추가폰트${customFonts.length + 1}`).trim(); const format = getFontFormat(url); registerDynamicFont(name, url, format); saveFontEntry({ name, src: url, format, type: 'web' }); setFontFamilyAction(`'${name}', Arial, sans-serif`);
     });
-    stage.addEventListener('click', (e) => { if (e.target === stage) clearActiveBox(); });
+    stage.addEventListener('click', (e) => { if (e.target === stage) clearAllSelection(); });
     window.addEventListener('mousemove', (e) => {
-      if (!dragging || !activeBox) return; const rect = stage.getBoundingClientRect(); const x = Math.max(0, Math.round(e.clientX - rect.left - dragOffsetX)); const y = Math.max(0, Math.round(e.clientY - rect.top - dragOffsetY)); activeBox.style.left = `${x}px`; activeBox.style.top = `${y}px`; autoFitBox(activeBox);
+      if (dragMode === 'move' && dragTarget) {
+        const rect = stage.getBoundingClientRect();
+        const boxWidth = dragTarget.offsetWidth, boxHeight = dragTarget.offsetHeight;
+        const maxX = Math.max(0, stage.clientWidth - boxWidth - 4), maxY = Math.max(0, stage.clientHeight - boxHeight - 4);
+        const x = Math.max(0, Math.min(maxX, Math.round(e.clientX - rect.left - dragOffsetX)));
+        const y = Math.max(0, Math.min(maxY, Math.round(e.clientY - rect.top - dragOffsetY)));
+        dragTarget.style.left = `${x}px`; dragTarget.style.top = `${y}px`;
+        return;
+      }
+      if (dragMode === 'text-resize' && resizeTarget) {
+        const left = parseInt(resizeTarget.style.left || '0', 10);
+        const dx = e.clientX - resizeStartX;
+        const width = Math.max(80, Math.min(stage.clientWidth - left - 4, resizeStartWidth + dx));
+        resizeTarget.style.width = `${width}px`;
+        autoFitBox(resizeTarget);
+        return;
+      }
+      if (dragMode === 'resize' && resizeTarget) {
+        const dx = e.clientX - resizeStartX;
+        let width = Math.max(80, resizeStartWidth + dx);
+        let height = Math.max(80, Math.round(width / Math.max(0.1, resizeAspect)));
+        if (parseInt(resizeTarget.style.top || '0', 10) + height > stage.clientHeight - 4) {
+          height = Math.max(80, stage.clientHeight - 4 - parseInt(resizeTarget.style.top || '0', 10));
+          width = Math.max(80, Math.round(height * resizeAspect));
+        }
+        if (parseInt(resizeTarget.style.left || '0', 10) + width > stage.clientWidth - 4) {
+          width = Math.max(80, stage.clientWidth - 4 - parseInt(resizeTarget.style.left || '0', 10));
+          height = Math.max(80, Math.round(width / Math.max(0.1, resizeAspect)));
+        }
+        resizeTarget.style.width = `${width}px`; resizeTarget.style.height = `${height}px`;
+      }
     });
-    window.addEventListener('mouseup', () => dragging = false);
+    window.addEventListener('mouseup', () => {
+      if (dragMode === 'move' && dragTarget && dragTarget.classList.contains('text-box')) autoFitBox(dragTarget);
+      dragTarget = null; resizeTarget = null; dragMode = '';
+    });
     saveBtn.addEventListener('click', async () => {
-      const prev = activeBox; document.querySelectorAll('.text-box').forEach(el => el.classList.remove('active')); saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
-      try { const canvas = await html2canvas(stage, { scale: 2, useCORS: true, backgroundColor: null }); const url = canvas.toDataURL('image/png'); const link = document.createElement('a'); link.href = url; link.download = `${(fileName.value || 'my-design').trim() || 'my-design'}.png`; link.click(); }
-      catch { alert('PNG 저장 중 오류가 발생했습니다.'); }
-      finally { if (prev) prev.classList.add('active'); saveBtn.disabled = false; saveBtn.textContent = 'PNG 저장'; }
+      const prevBox = activeBox, prevImage = activeImage;
+      document.querySelectorAll('.text-box,.image-box').forEach(el => el.classList.remove('active'));
+      saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
+      try {
+        const canvas = await html2canvas(stage, { scale: 2, useCORS: true, backgroundColor: null });
+        const url = canvas.toDataURL('image/png'); const link = document.createElement('a'); link.href = url; link.download = `${(fileName.value || 'my-design').trim() || 'my-design'}.png`; link.click();
+      } catch { alert('PNG 저장 중 오류가 발생했습니다.'); }
+      finally {
+        if (prevBox) prevBox.classList.add('active'); if (prevImage) prevImage.classList.add('active');
+        saveBtn.disabled = false; saveBtn.textContent = 'PNG 저장';
+      }
     });
 
     setStageSize(1280, 720);
     highlightOpacityValue.textContent = `${highlightOpacity.value}%`;
-    buildSwatches();
-    buildFontSizePresets();
-    loadSavedFonts();
-    createBox();
-    syncToolbarFromBox();
+    imageOpacityValue.textContent = `${imageOpacity.value}%`;
+    imageRadiusValue.textContent = `${imageRadius.value}px`;
+    buildSwatches(); buildFontSizePresets(); loadSavedFonts(); createBox(); syncToolbarFromBox(); updateImageButtonStates();
   </script>
 </body>
 </html>
