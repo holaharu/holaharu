@@ -1,663 +1,185 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>간단 텍스트 편집기 v11</title>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <style id="dynamicFontStyle">
-    @font-face {
-      font-family: 'GangwonEducationModuche';
-      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEdu_OTFLightA.woff') format('woff');
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-  </style>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #eef4ff; color: #1d2a3a; font-family: Arial, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
-    .app { display: grid; grid-template-columns: 340px 1fr; min-height: 100vh; }
-    .panel { padding: 18px; background: #f9fbff; border-right: 1px solid #d7e3f4; overflow-y: auto; box-shadow: 8px 0 24px rgba(60,90,140,.08); }
-    h1 { margin: 0 0 8px; font-size: 22px; color: #203252; }
-    .lead { margin: 0 0 16px; font-size: 13px; line-height: 1.55; color: #56708f; }
-    .group, details { background: #fff; padding: 14px; border-radius: 16px; margin-bottom: 12px; border: 1px solid #dce8f7; box-shadow: 0 8px 20px rgba(100,132,179,.08); }
-    .group h2, details summary { margin: 0; font-size: 15px; color: #294064; font-weight: 700; }
-    details summary { cursor: pointer; list-style: none; }
-    details summary::-webkit-details-marker { display: none; }
-    details[open] summary { margin-bottom: 12px; }
-    .field { margin-bottom: 10px; }
-    .field:last-child { margin-bottom: 0; }
-    label { display: block; margin-bottom: 6px; font-size: 13px; color: #3a5375; }
-    input[type="text"], select, button, input[type="file"], input[type="color"] { width: 100%; }
-    input[type="text"], select {
-      border: 1px solid #cfe0f2; background: #fff; color: #18304f; border-radius: 11px; padding: 10px 12px; font-size: 14px; outline: none;
-    }
-    input[type="range"] { width: 100%; }
-    .btn { border: 0; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 700; cursor: pointer; background: #4b8dff; color: white; box-shadow: 0 8px 18px rgba(75,141,255,.22); }
-    .btn.secondary { background: #edf4ff; color: #29508b; box-shadow: none; border: 1px solid #cfe0f2; }
-    .btn.danger { background: #ff6f91; box-shadow: 0 8px 18px rgba(255,111,145,.18); }
-    .btn.small { width: auto; padding: 8px 12px; font-size: 13px; }
-    .btn.toggle-on { background: #dceaff; border-color: #7aa7ff; color: #214c93; }
-    .hint, .meta { margin-top: 8px; font-size: 12px; line-height: 1.5; color: #6b82a0; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip-btn { width: auto; padding: 8px 10px; border-radius: 999px; border: 1px solid #cfe0f2; background: #fff; color: #294064; cursor: pointer; font-size: 13px; }
-    .chip-btn.active { background: #edf4ff; border-color: #7aa7ff; box-shadow: 0 0 0 3px rgba(122,167,255,.15); }
-    .size-row { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; }
-    .size-display { display: flex; align-items: center; justify-content: center; border: 1px solid #cfe0f2; background: #fff; border-radius: 11px; color: #18304f; font-size: 14px; min-height: 40px; }
-    .swatch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-    .swatch-btn { height: 28px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
-    .swatch-btn.active { border-color: #4b8dff; box-shadow: 0 0 0 3px rgba(75,141,255,.18); }
-    .font-saved-list { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-    .font-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: #edf4ff; color: #29508b; font-size: 12px; border: 1px solid #cfe0f2; }
-    .font-chip button { width: auto; border: 0; background: transparent; color: #7a8fb0; cursor: pointer; padding: 0; font-size: 12px; }
-    .stage-area { padding: 24px; overflow: auto; background: linear-gradient(180deg,#f3f8ff 0%,#e7f0ff 100%); display: flex; justify-content: center; align-items: flex-start; }
-    #stage { position: relative; width: 1280px; height: 720px; background: #dde8f7 center/100% 100% no-repeat; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 50px rgba(87,125,179,.20); flex: 0 0 auto; }
-    .text-box { position: absolute; z-index: 20; display: inline-block; width: fit-content; min-width: 16px; max-width: calc(100% - 12px); min-height: 16px; padding: 4px 6px; border: 2px dashed transparent; border-radius: 12px; background: transparent; transition: border-color .12s ease, background-color .12s ease, box-shadow .12s ease; }
-    .text-box.active { border-color: rgba(54,125,255,.75); background: rgba(255,255,255,.18); box-shadow: 0 0 0 4px rgba(94,153,255,.12); }
-    .image-box { position: absolute; z-index: 30; border: 2px dashed transparent; border-radius: 18px; transition: border-color .12s ease, box-shadow .12s ease; }
-    .text-resize-handle { left: 50%; right: auto; bottom: -14px; transform: translateX(-50%); cursor: ew-resize; width: 42px; border-radius: 999px; }
-    .image-box.active { border-color: rgba(54,125,255,.75); box-shadow: 0 0 0 4px rgba(94,153,255,.12); }
-    .image-frame { width: 100%; height: 100%; overflow: hidden; border-radius: inherit; background: rgba(255,255,255,.12); }
-    .image-frame img { width: 100%; height: 100%; display: block; object-fit: fill; user-select: none; -webkit-user-drag: none; }
-    .move-handle, .resize-handle {
-      position: absolute; width: 24px; height: 24px; border-radius: 999px; border: 1px solid #b9cff1; background: #fff; color: #5077b6;
-      display: none; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 6px 14px rgba(70,104,160,.15); user-select: none;
-    }
-    .move-handle { top: -11px; right: -11px; cursor: move; }
-    .resize-handle { right: -11px; bottom: -11px; cursor: nwse-resize; transform: none; }
-    .text-box.active .move-handle, .text-box.active .text-resize-handle, .image-box.active .move-handle, .image-box.active .resize-handle { display: flex; }
-    .editor { display: inline-block; width: auto; min-width: 1px; min-height: 1em; max-width: 100%; outline: none; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; cursor: text; color: #000000; text-shadow: none; font-family: 'GangwonEducationModuche', Arial, sans-serif; font-size: 15pt; line-height: 1.35; text-align: left; font-weight: 400; background-color: transparent; }
-    .bottom-tools { margin-top: 18px; }
-    @media (max-width: 1100px) {
-      .app { grid-template-columns: 1fr; }
-      .panel { border-right: 0; border-bottom: 1px solid #d7e3f4; }
-      .stage-area { justify-content: flex-start; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Software Hub</title>
+<!-- CSV 파싱 라이브러리 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --text:#20242d; --muted:#727887;
+  --line:#e7e9ef; --accent:#5b5ce2; --green:#18a66a; --orange:#e58a25;
+  --shadow:0 8px 30px rgba(31,35,45,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text)}
+header{background:#171923;color:#fff;padding:30px 42px;position:sticky;top:0;z-index:10}
+.header-inner{max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:20px}
+h1{margin:0;font-size:25px}.subtitle{color:#aeb3c2;font-size:13px;margin-top:5px}
+.search{width:300px;padding:11px 14px;border:1px solid #383c4b;border-radius:10px;background:#242733;color:#fff;outline:none}
+main{max-width:1200px;margin:30px auto;padding:0 20px; min-height:60vh;}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:30px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:20px;box-shadow:var(--shadow)}
+.stat .label{font-size:13px;color:var(--muted)} .stat .num{font-size:28px;font-weight:750;margin-top:7px}
+.section{margin:36px 0}
+.section-title{display:flex;align-items:end;justify-content:space-between;margin-bottom:14px}
+.section-title h2{margin:0;font-size:21px}.section-title span{font-size:12px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.card-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:17px}
+.product{font-size:19px;font-weight:750}.tag{font-size:11px;padding:5px 8px;border-radius:99px;background:#eef0ff;color:#4d50ca;font-weight:650}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.item{border-top:1px solid var(--line);padding-top:11px}
+.item .k{font-size:11px;color:var(--muted);margin-bottom:4px}.item .v{font-size:14px;font-weight:600}
+.people{display:flex;gap:7px;flex-wrap:wrap}.person{background:#f1f2f6;border-radius:8px;padding:6px 9px;font-size:12px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+th,td{text-align:left;padding:13px 15px;border-bottom:1px solid var(--line);font-size:13px}
+th{background:#fafafd;color:var(--muted);font-size:11px}tr:last-child td{border-bottom:0}
+.status{display:inline-block;padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700}.active{background:#e8f8f0;color:#138353}.pending{background:#fff3df;color:#b46b13}
+.notice{padding:15px 17px;background:#fff9e9;border:1px solid #f4df9e;border-radius:12px;font-size:13px;color:#6e591d;margin-top:18px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:30px}
+.loading{text-align:center;padding:50px;color:var(--muted);}
+@media(max-width:800px){.summary{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}.search{width:190px}}
+@media(max-width:520px){header{padding:22px}.header-inner{align-items:flex-start;flex-direction:column}.search{width:100%}.summary{grid-template-columns:1fr 1fr}}
+</style>
 </head>
 <body>
-  <div class="app">
-    <aside class="panel">
-      <h1>간단 편집기</h1>
-      <p class="lead">배경 위에 사진을 올리고, 이동·크기조정·모서리·그림자·테두리까지 바로 다룰 수 있게 추가했습니다.</p>
-
-      <div class="group">
-        <h2>요소 추가</h2>
-        <div class="row">
-          <button class="btn" id="addBoxBtn" type="button">텍스트 박스 추가</button>
-          <button class="btn secondary" id="addPhotoBtn" type="button">사진 추가</button>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <button class="btn danger" id="deleteBoxBtn" type="button">현재 텍스트 삭제</button>
-          <button class="btn danger" id="deleteImageBtn" type="button">현재 사진 삭제</button>
-        </div>
-        <input type="file" id="photoUpload" accept="image/*" style="display:none;" />
-        <div class="hint">텍스트는 아래쪽 가운데 손잡이로 박스 너비를 조절하고, 사진은 오른쪽 아래 손잡이로 크기조정됩니다.</div>
-      </div>
-
-      <div class="group">
-        <h2>현재 텍스트 설정</h2>
-        <div class="field">
-          <label>글씨체</label>
-          <div class="chip-grid" id="fontButtons"></div>
-        </div>
-        <div class="field">
-          <label>글자 크기</label>
-          <div class="size-row">
-            <button class="btn secondary" id="fontSizeDown" type="button">-</button>
-            <div class="size-display" id="fontSizeDisplay">15pt</div>
-            <button class="btn secondary" id="fontSizeUp" type="button">+</button>
-          </div>
-          <div class="chip-grid" id="fontSizePresets" style="margin-top:8px;"></div>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label for="textColor">글자색</label>
-            <input type="color" id="textColor" value="#000000" />
-          </div>
-          <div class="field">
-            <label for="align">정렬</label>
-            <select id="align">
-              <option value="left">왼쪽</option>
-              <option value="center">가운데</option>
-              <option value="right">오른쪽</option>
-            </select>
-          </div>
-        </div>
-        <div class="row">
-          <button class="btn secondary" id="boldBtn" type="button">B</button>
-          <button class="btn secondary" id="clearHighlightBtn" type="button">형광펜 지우기</button>
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label for="lineHeight">줄 간격</label>
-          <input type="range" id="lineHeight" min="100" max="220" value="135" />
-          <div class="meta" id="lineHeightValue">1.35</div>
-        </div>
-        <div class="field">
-          <label>파스텔 형광펜</label>
-          <div class="swatch-grid" id="swatchGrid"></div>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label for="highlightColor">직접 색상</label>
-            <input type="color" id="highlightColor" value="#fde2e4" />
-          </div>
-          <div class="field">
-            <label for="highlightOpacity">투명도</label>
-            <input type="range" id="highlightOpacity" min="0" max="100" value="75" />
-            <div class="meta" id="highlightOpacityValue">75%</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="group">
-        <h2>선택한 사진 설정</h2>
-        <div class="row">
-          <div class="field">
-            <label for="imageOpacity">투명도</label>
-            <input type="range" id="imageOpacity" min="10" max="100" value="100" />
-            <div class="meta" id="imageOpacityValue">100%</div>
-          </div>
-          <div class="field">
-            <label for="imageRadius">모서리</label>
-            <input type="range" id="imageRadius" min="0" max="60" value="18" />
-            <div class="meta" id="imageRadiusValue">18px</div>
-          </div>
-        </div>
-        <div class="field">
-          <label for="imageBorderColor">테두리 색</label>
-          <input type="color" id="imageBorderColor" value="#ffffff" />
-        </div>
-        <div class="row">
-          <button class="btn secondary" id="toggleImageBorderBtn" type="button">테두리</button>
-          <button class="btn secondary" id="toggleImageShadowBtn" type="button">그림자</button>
-        </div>
-        <div class="hint">사진을 클릭한 뒤 조절하면 바로 반영됩니다.</div>
-      </div>
-
-      <div class="group">
-        <h2>저장</h2>
-        <div class="field">
-          <label for="fileName">파일명</label>
-          <input type="text" id="fileName" value="my-design" />
-        </div>
-        <button class="btn" id="saveBtn" type="button">PNG 저장</button>
-      </div>
-
-      <div class="bottom-tools">
-        <details>
-          <summary>폰트 추가</summary>
-          <div class="field" style="margin-top:12px;">
-            <label for="customFontName">폰트 이름</label>
-            <input type="text" id="customFontName" placeholder="예: 내가추가한폰트" />
-          </div>
-          <div class="field">
-            <label for="fontUpload">로컬 폰트 파일</label>
-            <input type="file" id="fontUpload" accept=".ttf,.otf,.woff,.woff2" />
-          </div>
-          <div class="field">
-            <button class="btn secondary" id="addLocalFontBtn" type="button">업로드 폰트 추가</button>
-          </div>
-          <div class="field">
-            <label for="webFontUrl">웹폰트 URL</label>
-            <input type="text" id="webFontUrl" placeholder="https://example.com/font.woff2" />
-          </div>
-          <button class="btn secondary" id="addWebFontBtn" type="button">웹폰트 URL 추가</button>
-          <div class="meta">추가한 폰트 목록은 자동 저장됩니다.</div>
-          <div class="font-saved-list" id="savedFontList"></div>
-        </details>
-
-        <details>
-          <summary>배경 이미지</summary>
-          <div style="margin-top:12px;">
-            <input type="file" id="bgUpload" accept="image/*" style="display:none;" />
-            <button class="btn secondary small" id="bgUploadBtn" type="button">불러오기</button>
-            <div class="row" style="margin-top:10px;">
-              <div class="field"><label for="canvasWidth">캔버스 가로</label><input type="text" id="canvasWidth" value="1280" inputmode="numeric" /></div>
-              <div class="field"><label for="canvasHeight">캔버스 세로</label><input type="text" id="canvasHeight" value="720" inputmode="numeric" /></div>
-            </div>
-            <button class="btn secondary" id="applyCanvasSizeBtn" type="button">캔버스 크기 적용</button>
-            <div class="meta" id="imageInfo">현재 캔버스 크기: 1280 × 720</div>
-          </div>
-        </details>
-      </div>
-    </aside>
-
-    <main class="stage-area">
-      <div id="stage"></div>
-    </main>
+<header>
+  <div class="header-inner">
+    <div><h1>Company Software Hub</h1><div class="subtitle">회사에서 사용 중인 SaaS · 프로그램 · 계정 · 결제 관리</div></div>
+    <input class="search" id="search" placeholder="프로그램 / 담당자 검색">
   </div>
+</header>
 
-  <script>
-    const STORAGE_KEY = 'elie_custom_fonts_v2';
-    const PRESET_COLORS = ['#fde2e4','#fad2e1','#e2ece9','#bee1e6','#dfe7fd','#cddafd','#f9dcc4','#fec89a','#faedcb','#e9edc9','#d8e2dc','#e4c1f9'];
-    const FONT_SIZE_PRESETS = [12, 15, 18, 20, 24, 28, 32, 40];
-    const BUILTIN_FONTS = [
-      { label: '강원교육모두체', value: "'GangwonEducationModuche', Arial, sans-serif" },
-      { label: '기본 고딕', value: "'Apple SD Gothic Neo','Malgun Gothic',sans-serif" },
-      { label: '세리프', value: "Georgia, 'Times New Roman', serif" }
-    ];
+<main id="app-main">
+  <div class="summary">
+    <div class="stat"><div class="label">관리 프로그램</div><div class="num" id="stat-prog">0</div></div>
+    <div class="stat"><div class="label">확보된 좌석</div><div class="num" id="stat-seat">0</div></div>
+    <div class="stat"><div class="label">결제 카드 수</div><div class="num" id="stat-card">0</div></div>
+    <div class="stat"><div class="label">등록된 사용자</div><div class="num" id="stat-user">0</div></div>
+  </div>
+  <div id="dynamic-content">
+      <div class="loading">엑셀 데이터를 불러오는 중입니다...</div>
+  </div>
+</main>
 
-    const stage = document.getElementById('stage');
-    const bgUpload = document.getElementById('bgUpload');
-    const bgUploadBtn = document.getElementById('bgUploadBtn');
-    const imageInfo = document.getElementById('imageInfo');
-    const canvasWidth = document.getElementById('canvasWidth');
-    const canvasHeight = document.getElementById('canvasHeight');
-    const applyCanvasSizeBtn = document.getElementById('applyCanvasSizeBtn');
-    const addBoxBtn = document.getElementById('addBoxBtn');
-    const deleteBoxBtn = document.getElementById('deleteBoxBtn');
-    const addPhotoBtn = document.getElementById('addPhotoBtn');
-    const deleteImageBtn = document.getElementById('deleteImageBtn');
-    const photoUpload = document.getElementById('photoUpload');
-    const fontButtons = document.getElementById('fontButtons');
-    const fontSizeDown = document.getElementById('fontSizeDown');
-    const fontSizeUp = document.getElementById('fontSizeUp');
-    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
-    const fontSizePresets = document.getElementById('fontSizePresets');
-    const textColor = document.getElementById('textColor');
-    const align = document.getElementById('align');
-    const boldBtn = document.getElementById('boldBtn');
-    const lineHeight = document.getElementById('lineHeight');
-    const lineHeightValue = document.getElementById('lineHeightValue');
-    const swatchGrid = document.getElementById('swatchGrid');
-    const highlightColor = document.getElementById('highlightColor');
-    const highlightOpacity = document.getElementById('highlightOpacity');
-    const highlightOpacityValue = document.getElementById('highlightOpacityValue');
-    const clearHighlightBtn = document.getElementById('clearHighlightBtn');
-    const imageOpacity = document.getElementById('imageOpacity');
-    const imageOpacityValue = document.getElementById('imageOpacityValue');
-    const imageRadius = document.getElementById('imageRadius');
-    const imageRadiusValue = document.getElementById('imageRadiusValue');
-    const imageBorderColor = document.getElementById('imageBorderColor');
-    const toggleImageBorderBtn = document.getElementById('toggleImageBorderBtn');
-    const toggleImageShadowBtn = document.getElementById('toggleImageShadowBtn');
-    const fileName = document.getElementById('fileName');
-    const saveBtn = document.getElementById('saveBtn');
-    const dynamicFontStyle = document.getElementById('dynamicFontStyle');
-    const customFontName = document.getElementById('customFontName');
-    const fontUpload = document.getElementById('fontUpload');
-    const addLocalFontBtn = document.getElementById('addLocalFontBtn');
-    const webFontUrl = document.getElementById('webFontUrl');
-    const addWebFontBtn = document.getElementById('addWebFontBtn');
-    const savedFontList = document.getElementById('savedFontList');
+<footer>Company Software Hub · GitHub Pages용 정적 웹페이지</footer>
 
-    let boxCount = 0, imageCount = 0, activeBox = null, activeImage = null, savedRange = null;
-    let currentFontValue = BUILTIN_FONTS[0].value, customFonts = [];
-    let dragTarget = null, dragMode = '', dragOffsetX = 0, dragOffsetY = 0;
-    let resizeTarget = null, resizeStartX = 0, resizeStartY = 0, resizeStartWidth = 0, resizeStartHeight = 0, resizeAspect = 1;
+<script>
+// 👇👇👇 여기에 구글 스프레드시트 CSV 링크를 붙여넣으세요! 👇👇👇
+const SHEET_CSV_URL = "여기에_링크를_붙여넣으세요";
+// 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
-    function setStageSize(w, h) {
-      const width = Math.max(200, Math.min(6000, Math.round(Number(w) || 1280)));
-      const height = Math.max(200, Math.min(6000, Math.round(Number(h) || 720)));
-      stage.style.width = `${width}px`; stage.style.height = `${height}px`;
-      canvasWidth.value = width; canvasHeight.value = height;
-      imageInfo.textContent = `현재 캔버스 크기: ${width} × ${height}`;
-      document.querySelectorAll('.text-box').forEach(box => autoFitBox(box));
-      document.querySelectorAll('.image-box').forEach(box => clampImageBox(box));
-    }
-    function getEditor(box = activeBox) { return box ? box.querySelector('.editor') : null; }
-    function hexToRgba(hex, alpha) { const v = hex.replace('#',''); const n = parseInt(v,16); return `rgba(${(n>>16)&255}, ${(n>>8)&255}, ${n&255}, ${alpha})`; }
-    function autoFitBox(box = activeBox) {
-      if (!box) return; const editor = getEditor(box); if (!editor) return;
-      const stageW = stage.clientWidth, left = parseInt(box.style.left || '0', 10), available = Math.max(80, stageW - left - 12);
-      box.style.maxWidth = `${available}px`; editor.style.maxWidth = '100%';
-      if (box.dataset.manualWidth === '1') {
-        const currentWidth = parseInt(box.style.width || '260', 10);
-        const width = Math.max(80, Math.min(available, currentWidth || 260));
-        box.style.width = `${width}px`;
-        editor.style.width = '100%';
-      } else {
-        box.style.width = 'fit-content';
-        editor.style.width = 'auto';
+fetch(SHEET_CSV_URL)
+  .then(res => res.text())
+  .then(csvText => {
+    Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        renderData(results.data);
       }
-    }
-    function rgbToHex(color) {
-      if (!color) return '#000000'; if (color.startsWith('#')) return color; const nums = color.match(/\d+/g); if (!nums) return '#000000';
-      return '#' + nums.slice(0,3).map(v => Number(v).toString(16).padStart(2,'0')).join('');
-    }
-    function clearTextSelectionState() {
-      document.querySelectorAll('.text-box').forEach(el => el.classList.remove('active'));
-      activeBox = null; savedRange = null;
-    }
-    function clearImageSelectionState() {
-      document.querySelectorAll('.image-box').forEach(el => el.classList.remove('active'));
-      activeImage = null;
-    }
-    function setActiveBox(box, preserveRange = false) {
-      document.querySelectorAll('.text-box').forEach(el => el.classList.remove('active'));
-      clearImageSelectionState();
-      const sameBox = activeBox === box; activeBox = box; if (!preserveRange || !sameBox) savedRange = null;
-      if (activeBox) { activeBox.classList.add('active'); syncToolbarFromBox(); }
-    }
-    function setActiveImage(box) {
-      clearTextSelectionState();
-      document.querySelectorAll('.image-box').forEach(el => el.classList.remove('active'));
-      activeImage = box;
-      if (activeImage) { activeImage.classList.add('active'); syncImageToolbar(); }
-    }
-    function clearAllSelection() { clearTextSelectionState(); clearImageSelectionState(); }
-    function getCurrentFontSizeValue() {
-      const text = fontSizeDisplay.textContent || '15pt';
-      const n = parseInt(text, 10);
-      return Number.isFinite(n) ? n : 15;
-    }
-    function setFontSizeDisplay(value) { fontSizeDisplay.textContent = `${value}pt`; syncFontSizePresetActive(); }
-    function syncToolbarFromBox() {
-      if (!activeBox) return; const editor = getEditor(activeBox);
-      currentFontValue = editor.style.fontFamily || BUILTIN_FONTS[0].value;
-      setFontSizeDisplay(parseInt(editor.style.fontSize || '15', 10));
-      textColor.value = rgbToHex(editor.style.color || 'rgb(0,0,0)');
-      align.value = editor.style.textAlign || 'left';
-      lineHeight.value = Math.round((parseFloat(editor.style.lineHeight || '1.35')) * 100);
-      lineHeightValue.textContent = (lineHeight.value / 100).toFixed(2);
-      syncFontButtonsActive();
-    }
-    function updateImageButtonStates() {
-      toggleImageBorderBtn.classList.toggle('toggle-on', !!(activeImage && activeImage.dataset.border === '1'));
-      toggleImageShadowBtn.classList.toggle('toggle-on', !!(activeImage && activeImage.dataset.shadow === '1'));
-    }
-    function syncImageToolbar() {
-      if (!activeImage) return;
-      const frame = activeImage.querySelector('.image-frame');
-      const opacity = Math.round(parseFloat(frame.style.opacity || '1') * 100);
-      const radius = parseInt(activeImage.style.borderRadius || '18', 10) || 0;
-      imageOpacity.value = opacity; imageOpacityValue.textContent = `${opacity}%`;
-      imageRadius.value = radius; imageRadiusValue.textContent = `${radius}px`;
-      imageBorderColor.value = rgbToHex(frame.style.borderColor || '#ffffff');
-      updateImageButtonStates();
-    }
-    function applyImageFrameStyle(box) {
-      if (!box) return;
-      const frame = box.querySelector('.image-frame');
-      frame.style.opacity = `${(parseInt(imageOpacity.value || '100', 10) / 100).toFixed(2)}`;
-      box.style.borderRadius = `${parseInt(imageRadius.value || '18', 10)}px`;
-      frame.style.borderRadius = box.style.borderRadius;
-      if (box.dataset.border === '1') frame.style.border = `4px solid ${imageBorderColor.value}`;
-      else frame.style.border = '0';
-      frame.style.boxShadow = box.dataset.shadow === '1' ? '0 18px 38px rgba(28,57,102,.28)' : 'none';
-      syncImageToolbar();
-    }
-    function clampImageBox(box) {
-      if (!box) return;
-      const maxX = Math.max(0, stage.clientWidth - box.offsetWidth - 4);
-      const maxY = Math.max(0, stage.clientHeight - box.offsetHeight - 4);
-      const x = Math.max(0, Math.min(maxX, parseInt(box.style.left || '0', 10)));
-      const y = Math.max(0, Math.min(maxY, parseInt(box.style.top || '0', 10)));
-      box.style.left = `${x}px`; box.style.top = `${y}px`;
-    }
-    function captureSelection() {
-      const editor = getEditor(); const sel = window.getSelection();
-      if (!editor || !sel || sel.rangeCount === 0) return;
-      const range = sel.getRangeAt(0);
-      if (!editor.contains(range.commonAncestorContainer)) return;
-      if (sel.toString().trim() === '') return;
-      savedRange = range.cloneRange();
-    }
-    function restoreSavedSelection() {
-      const editor = getEditor(); const sel = window.getSelection();
-      if (!editor || !sel || !savedRange) return false;
-      try { sel.removeAllRanges(); sel.addRange(savedRange); return true; } catch { return false; }
-    }
-    function unwrapSpan(span) { const parent = span.parentNode; while (span.firstChild) parent.insertBefore(span.firstChild, span); parent.removeChild(span); }
-    function unwrapSpansByMatch(root, matcher) { [...root.querySelectorAll('span')].forEach(span => { if (!matcher(span)) return; unwrapSpan(span); }); }
-    function cleanStyledSpans(root, styleKeys) {
-      [...root.querySelectorAll('span')].forEach(span => {
-        styleKeys.forEach(key => { span.style[key] = ''; });
-        if (span.dataset.highlight === '1' && !span.style.backgroundColor) delete span.dataset.highlight;
-        if (!span.getAttribute('style') && !span.dataset.highlight) unwrapSpan(span);
+    });
+  });
+
+function renderData(data) {
+  const container = document.getElementById('dynamic-content');
+  container.innerHTML = ''; 
+
+  const categories = {};
+  let totalSeats = 0, totalUsers = 0;
+  const cardSet = new Set();
+
+  // 1. 카테고리별 데이터 분류
+  data.forEach(row => {
+    if (!row['프로그램']) return;
+    const cat = row['카테고리'] || '기타 카테고리';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(row);
+    
+    totalSeats += parseInt(row['보유좌석']) || 0;
+    if(row['결제카드']) cardSet.add(row['결제카드']);
+  });
+
+  // 2. 카테고리별 카드 렌더링
+  let userTableRows = '';
+  for (const [cat, items] of Object.entries(categories)) {
+    let cardsHTML = '';
+    
+    items.forEach(item => {
+      // 사용자 목록 처리
+      const users = item['사용자'] ? item['사용자'].split(',').map(u => u.trim()) : [];
+      totalUsers += users.length;
+      const peopleHTML = users.map(u => `<span class="person">${u}</span>`).join('');
+      
+      // 표에 들어갈 행 데이터 누적
+      users.forEach(u => {
+        userTableRows += `<tr><td>${item['프로그램']}</td><td>${u}</td><td>-</td><td>사용자</td><td><span class="status active">사용중</span></td></tr>`;
       });
-    }
-    function applyStyleToSelection(styleMap, removeHighlight = false) {
-      if (!activeBox) return false;
-      if (!restoreSavedSelection()) return false;
-      const sel = window.getSelection();
-      if (!sel || !sel.rangeCount || sel.toString().trim() === '') return false;
-      const range = sel.getRangeAt(0);
-      const frag = range.extractContents();
-      const holder = document.createElement('div');
-      holder.appendChild(frag);
-      if (removeHighlight) unwrapSpansByMatch(holder, span => span.dataset.highlight === '1');
-      const styleKeys = Object.keys(styleMap);
-      if (styleKeys.length) cleanStyledSpans(holder, styleKeys);
-      const span = document.createElement('span');
-      Object.entries(styleMap).forEach(([k, v]) => { span.style[k] = v; });
-      if (styleMap.backgroundColor) span.dataset.highlight = '1';
-      while (holder.firstChild) span.appendChild(holder.firstChild);
-      if ((removeHighlight && !styleMap.backgroundColor) || styleKeys.length === 0) {
-        const fragment = document.createDocumentFragment();
-        while (span.firstChild) fragment.appendChild(span.firstChild);
-        range.insertNode(fragment);
-      } else { range.insertNode(span); }
-      sel.removeAllRanges();
-      savedRange = null; autoFitBox(activeBox); return true;
-    }
-    function applyOrSetBox(setter) {
-      if (!activeBox) return;
-      const applied = setter(true);
-      if (!applied) { setter(false); autoFitBox(activeBox); }
-    }
-    function setFontFamilyAction(value) {
-      currentFontValue = value; syncFontButtonsActive();
-      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ fontFamily: value }); getEditor().style.fontFamily = value; return false; });
-    }
-    function setFontSizeValue(value) {
-      const safe = Math.max(6, Math.min(200, value)); setFontSizeDisplay(safe);
-      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ fontSize: `${safe}pt` }); getEditor().style.fontSize = `${safe}pt`; return false; });
-    }
-    function setTextColorAction() {
-      const value = textColor.value;
-      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ color: value }); getEditor().style.color = value; return false; });
-    }
-    function setBoldAction() {
-      if (!activeBox) return; const editor = getEditor(); editor.focus();
-      const restored = restoreSavedSelection(); const sel = window.getSelection();
-      const hasSelection = !!(restored && sel && sel.rangeCount && sel.toString().trim() !== '');
-      if (hasSelection) { document.execCommand('styleWithCSS', false, true); document.execCommand('bold'); savedRange = null; autoFitBox(activeBox); return; }
-      const current = editor.style.fontWeight || '400'; editor.style.fontWeight = (current === '700' || current === 'bold') ? '400' : '700'; autoFitBox(activeBox);
-    }
-    function setHighlightAction(color) {
-      highlightColor.value = color; syncSwatchActive();
-      applyOrSetBox((selectionMode) => { if (selectionMode) return applyStyleToSelection({ backgroundColor: hexToRgba(color, (parseInt(highlightOpacity.value || 75, 10) / 100).toFixed(2)) }); return false; });
-    }
-    function clearHighlightAction() { if (!activeBox) return; applyStyleToSelection({}, true); }
-    function setAlignAction() { if (!activeBox) return; getEditor().style.textAlign = align.value; }
-    function setLineHeightAction() { if (!activeBox) return; const v = (parseInt(lineHeight.value || 135, 10) / 100).toFixed(2); getEditor().style.lineHeight = v; lineHeightValue.textContent = v; autoFitBox(activeBox); }
-    function startMove(box, e) {
-      e.preventDefault(); e.stopPropagation();
-      dragTarget = box; dragMode = 'move';
-      const rect = box.getBoundingClientRect(); dragOffsetX = e.clientX - rect.left; dragOffsetY = e.clientY - rect.top;
-    }
-    function startResize(box, e) {
-      e.preventDefault(); e.stopPropagation();
-      resizeTarget = box; dragMode = box.classList.contains('text-box') ? 'text-resize' : 'resize';
-      resizeStartX = e.clientX; resizeStartY = e.clientY; resizeStartWidth = box.offsetWidth; resizeStartHeight = box.offsetHeight;
-      resizeAspect = parseFloat(box.dataset.aspect || (resizeStartWidth / Math.max(1, resizeStartHeight)) || '1');
-      if (box.classList.contains('text-box')) box.dataset.manualWidth = '1';
-    }
-    function createBox(content = '여기에 문장을 쓰세요.') {
-      boxCount += 1;
-      const box = document.createElement('div'); box.className = 'text-box'; box.dataset.id = String(boxCount); box.dataset.manualWidth = '1'; box.style.left = `${50 + (boxCount - 1) * 18}px`; box.style.top = `${50 + (boxCount - 1) * 18}px`; box.style.width = '260px';
-      const handle = document.createElement('div'); handle.className = 'move-handle'; handle.textContent = '✥';
-      const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle text-resize-handle'; resizeHandle.textContent = '가로'; resizeHandle.title = '텍스트 박스 너비 조절';
-      const editor = document.createElement('div'); editor.className = 'editor'; editor.contentEditable = 'true'; editor.innerText = content; editor.style.fontSize = '15pt'; editor.style.color = '#000000';
-      box.appendChild(handle); box.appendChild(resizeHandle); box.appendChild(editor); stage.appendChild(box); autoFitBox(box);
-      handle.addEventListener('mousedown', (e) => { setActiveBox(box, true); startMove(box, e); });
-      resizeHandle.addEventListener('mousedown', (e) => { setActiveBox(box, true); startResize(box, e); });
-      resizeHandle.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); box.dataset.manualWidth = '0'; box.style.width = ''; autoFitBox(box); });
-      box.addEventListener('click', (e) => { e.stopPropagation(); setActiveBox(box, true); });
-      editor.addEventListener('focus', () => setActiveBox(box, true));
-      editor.addEventListener('mouseup', captureSelection);
-      editor.addEventListener('keyup', captureSelection);
-      editor.addEventListener('input', () => { if (activeBox !== box) setActiveBox(box, true); autoFitBox(box); });
-      setActiveBox(box); return box;
-    }
-    function createImageBox(src, naturalWidth = 1200, naturalHeight = 800) {
-      imageCount += 1;
-      const box = document.createElement('div'); box.className = 'image-box'; box.dataset.id = `img-${imageCount}`; box.dataset.border = '0'; box.dataset.shadow = '0';
-      box.style.left = `${80 + (imageCount - 1) * 18}px`; box.style.top = `${80 + (imageCount - 1) * 18}px`;
-      const moveHandle = document.createElement('div'); moveHandle.className = 'move-handle'; moveHandle.textContent = '✥';
-      const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle'; resizeHandle.textContent = '↘';
-      const frame = document.createElement('div'); frame.className = 'image-frame';
-      const img = document.createElement('img'); img.src = src; img.alt = '추가한 사진'; img.draggable = false;
-      frame.appendChild(img); box.appendChild(moveHandle); box.appendChild(resizeHandle); box.appendChild(frame); stage.appendChild(box);
-      const width = Math.min(320, Math.max(140, naturalWidth)); const height = Math.max(100, Math.round(width * (naturalHeight / Math.max(1, naturalWidth))));
-      box.style.width = `${width}px`; box.style.height = `${height}px`; box.dataset.aspect = String(width / height); box.style.borderRadius = '18px'; frame.style.borderRadius = '18px';
-      moveHandle.addEventListener('mousedown', (e) => { setActiveImage(box); startMove(box, e); });
-      resizeHandle.addEventListener('mousedown', (e) => { setActiveImage(box); startResize(box, e); });
-      box.addEventListener('click', (e) => { e.stopPropagation(); setActiveImage(box); });
-      img.addEventListener('mousedown', (e) => { e.stopPropagation(); setActiveImage(box); });
-      applyImageFrameStyle(box); clampImageBox(box); setActiveImage(box); return box;
-    }
-    function getFontFormat(name) {
-      const ext = name.toLowerCase().split('.').pop();
-      if (ext === 'ttf') return 'truetype'; if (ext === 'otf') return 'opentype'; if (ext === 'woff') return 'woff'; if (ext === 'woff2') return 'woff2'; return '';
-    }
-    function escapeCssString(v) { return v.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
-    function registerDynamicFont(fontName, srcUrl, format) {
-      const safeName = escapeCssString(fontName), formatText = format ? ` format('${format}')` : '';
-      dynamicFontStyle.textContent += `\n@font-face { font-family: '${safeName}'; src: url('${srcUrl}')${formatText}; font-weight: 400; font-style: normal; font-display: swap; }\n`;
-    }
-    function loadSavedFonts() {
-      let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
-      customFonts = saved.slice(); saved.forEach(item => registerDynamicFont(item.name, item.src, item.format || '')); renderSavedFontList(saved); renderFontButtons();
-    }
-    function saveFontEntry(entry) {
-      let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
-      saved = saved.filter(v => !(v.name === entry.name && v.src === entry.src)); saved.push(entry); localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); customFonts = saved.slice(); renderSavedFontList(saved); renderFontButtons();
-    }
-    function removeSavedFont(name) {
-      let saved = []; try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { saved = []; }
-      saved = saved.filter(v => v.name !== name); localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); customFonts = saved.slice(); renderSavedFontList(saved); renderFontButtons();
-    }
-    function renderSavedFontList(saved) {
-      savedFontList.innerHTML = '';
-      saved.forEach(item => { const chip = document.createElement('div'); chip.className = 'font-chip'; chip.textContent = item.name; const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '삭제'; btn.addEventListener('click', () => removeSavedFont(item.name)); chip.appendChild(btn); savedFontList.appendChild(chip); });
-    }
-    function renderFontButtons() {
-      fontButtons.innerHTML = '';
-      const list = [...BUILTIN_FONTS, ...customFonts.map(item => ({ label: item.name, value: `'${item.name}', Arial, sans-serif` }))];
-      list.forEach(item => {
-        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'chip-btn'; btn.dataset.value = item.value; btn.textContent = item.label; btn.style.fontFamily = item.value;
-        btn.addEventListener('mousedown', e => e.preventDefault()); btn.addEventListener('click', () => setFontFamilyAction(item.value)); fontButtons.appendChild(btn);
-      });
-      syncFontButtonsActive();
-    }
-    function syncFontButtonsActive() { [...fontButtons.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.value === currentFontValue)); }
-    function buildFontSizePresets() {
-      fontSizePresets.innerHTML = '';
-      FONT_SIZE_PRESETS.forEach(size => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'chip-btn'; btn.dataset.size = String(size); btn.textContent = `${size}pt`; btn.addEventListener('mousedown', e => e.preventDefault()); btn.addEventListener('click', () => setFontSizeValue(size)); fontSizePresets.appendChild(btn); });
-      syncFontSizePresetActive();
-    }
-    function syncFontSizePresetActive() { const current = String(getCurrentFontSizeValue()); [...fontSizePresets.querySelectorAll('.chip-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.size === current)); }
-    function buildSwatches() {
-      swatchGrid.innerHTML = '';
-      PRESET_COLORS.forEach(color => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'swatch-btn'; btn.style.background = color; btn.dataset.color = color; btn.addEventListener('mousedown', e => e.preventDefault()); btn.addEventListener('click', () => setHighlightAction(color)); swatchGrid.appendChild(btn); });
-      syncSwatchActive();
-    }
-    function syncSwatchActive() { [...swatchGrid.querySelectorAll('.swatch-btn')].forEach(btn => btn.classList.toggle('active', btn.dataset.color.toLowerCase() === highlightColor.value.toLowerCase())); }
 
-    document.addEventListener('selectionchange', () => { if (!activeBox) return; captureSelection(); });
-    bgUploadBtn.addEventListener('click', () => bgUpload.click());
-    bgUpload.addEventListener('change', (e) => {
-      const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader();
-      reader.onload = () => { stage.style.backgroundImage = `url('${reader.result}')`; };
-      reader.readAsDataURL(file);
-    });
-    applyCanvasSizeBtn.addEventListener('click', () => setStageSize(canvasWidth.value, canvasHeight.value));
-    addBoxBtn.addEventListener('click', () => createBox('새 텍스트'));
-    deleteBoxBtn.addEventListener('click', () => { if (!activeBox) return; const others = [...document.querySelectorAll('.text-box')].filter(el => el !== activeBox); activeBox.remove(); activeBox = null; savedRange = null; if (others[0]) setActiveBox(others[0]); });
-    addPhotoBtn.addEventListener('click', () => photoUpload.click());
-    photoUpload.addEventListener('change', (e) => {
-      const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader();
-      reader.onload = () => { const img = new Image(); img.onload = () => createImageBox(reader.result, img.naturalWidth, img.naturalHeight); img.src = reader.result; };
-      reader.readAsDataURL(file); photoUpload.value = '';
-    });
-    deleteImageBtn.addEventListener('click', () => { if (!activeImage) return; const next = [...document.querySelectorAll('.image-box')].filter(el => el !== activeImage)[0] || null; activeImage.remove(); activeImage = null; if (next) setActiveImage(next); else updateImageButtonStates(); });
-    [fontSizeDown, fontSizeUp, boldBtn, clearHighlightBtn, toggleImageBorderBtn, toggleImageShadowBtn].forEach(el => el.addEventListener('mousedown', e => e.preventDefault()));
-    fontSizeDown.addEventListener('click', () => setFontSizeValue(getCurrentFontSizeValue() - 1));
-    fontSizeUp.addEventListener('click', () => setFontSizeValue(getCurrentFontSizeValue() + 1));
-    textColor.addEventListener('input', setTextColorAction);
-    align.addEventListener('change', setAlignAction);
-    boldBtn.addEventListener('click', setBoldAction);
-    lineHeight.addEventListener('input', setLineHeightAction);
-    highlightColor.addEventListener('input', () => { syncSwatchActive(); setHighlightAction(highlightColor.value); });
-    highlightOpacity.addEventListener('input', () => { highlightOpacityValue.textContent = `${highlightOpacity.value}%`; });
-    clearHighlightBtn.addEventListener('click', clearHighlightAction);
-    imageOpacity.addEventListener('input', () => { imageOpacityValue.textContent = `${imageOpacity.value}%`; if (activeImage) applyImageFrameStyle(activeImage); });
-    imageRadius.addEventListener('input', () => { imageRadiusValue.textContent = `${imageRadius.value}px`; if (activeImage) applyImageFrameStyle(activeImage); });
-    imageBorderColor.addEventListener('input', () => { if (activeImage) applyImageFrameStyle(activeImage); });
-    toggleImageBorderBtn.addEventListener('click', () => { if (!activeImage) return; activeImage.dataset.border = activeImage.dataset.border === '1' ? '0' : '1'; applyImageFrameStyle(activeImage); });
-    toggleImageShadowBtn.addEventListener('click', () => { if (!activeImage) return; activeImage.dataset.shadow = activeImage.dataset.shadow === '1' ? '0' : '1'; applyImageFrameStyle(activeImage); });
-    addLocalFontBtn.addEventListener('click', () => {
-      const file = fontUpload.files?.[0]; if (!file) { alert('먼저 폰트 파일을 선택해 주세요.'); return; }
-      const name = (customFontName.value || file.name.replace(/\.[^.]+$/, '')).trim(); const format = getFontFormat(file.name); const reader = new FileReader();
-      reader.onload = () => { const src = reader.result; registerDynamicFont(name, src, format); saveFontEntry({ name, src, format, type: 'local' }); setFontFamilyAction(`'${name}', Arial, sans-serif`); };
-      reader.readAsDataURL(file);
-    });
-    addWebFontBtn.addEventListener('click', () => {
-      const url = (webFontUrl.value || '').trim(); if (!url) { alert('웹폰트 URL을 입력해 주세요.'); return; }
-      const name = (customFontName.value || `추가폰트${customFonts.length + 1}`).trim(); const format = getFontFormat(url); registerDynamicFont(name, url, format); saveFontEntry({ name, src: url, format, type: 'web' }); setFontFamilyAction(`'${name}', Arial, sans-serif`);
-    });
-    stage.addEventListener('click', (e) => { if (e.target === stage) clearAllSelection(); });
-    window.addEventListener('mousemove', (e) => {
-      if (dragMode === 'move' && dragTarget) {
-        const rect = stage.getBoundingClientRect();
-        const boxWidth = dragTarget.offsetWidth, boxHeight = dragTarget.offsetHeight;
-        const maxX = Math.max(0, stage.clientWidth - boxWidth - 4), maxY = Math.max(0, stage.clientHeight - boxHeight - 4);
-        const x = Math.max(0, Math.min(maxX, Math.round(e.clientX - rect.left - dragOffsetX)));
-        const y = Math.max(0, Math.min(maxY, Math.round(e.clientY - rect.top - dragOffsetY)));
-        dragTarget.style.left = `${x}px`; dragTarget.style.top = `${y}px`;
-        return;
-      }
-      if (dragMode === 'text-resize' && resizeTarget) {
-        const left = parseInt(resizeTarget.style.left || '0', 10);
-        const dx = e.clientX - resizeStartX;
-        const width = Math.max(80, Math.min(stage.clientWidth - left - 4, resizeStartWidth + dx));
-        resizeTarget.style.width = `${width}px`;
-        autoFitBox(resizeTarget);
-        return;
-      }
-      if (dragMode === 'resize' && resizeTarget) {
-        const dx = e.clientX - resizeStartX;
-        let width = Math.max(80, resizeStartWidth + dx);
-        let height = Math.max(80, Math.round(width / Math.max(0.1, resizeAspect)));
-        if (parseInt(resizeTarget.style.top || '0', 10) + height > stage.clientHeight - 4) {
-          height = Math.max(80, stage.clientHeight - 4 - parseInt(resizeTarget.style.top || '0', 10));
-          width = Math.max(80, Math.round(height * resizeAspect));
-        }
-        if (parseInt(resizeTarget.style.left || '0', 10) + width > stage.clientWidth - 4) {
-          width = Math.max(80, stage.clientWidth - 4 - parseInt(resizeTarget.style.left || '0', 10));
-          height = Math.max(80, Math.round(width / Math.max(0.1, resizeAspect)));
-        }
-        resizeTarget.style.width = `${width}px`; resizeTarget.style.height = `${height}px`;
-      }
-    });
-    window.addEventListener('mouseup', () => {
-      if (dragMode === 'move' && dragTarget && dragTarget.classList.contains('text-box')) autoFitBox(dragTarget);
-      dragTarget = null; resizeTarget = null; dragMode = '';
-    });
-    saveBtn.addEventListener('click', async () => {
-      const prevBox = activeBox, prevImage = activeImage;
-      document.querySelectorAll('.text-box,.image-box').forEach(el => el.classList.remove('active'));
-      saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
-      try {
-        const canvas = await html2canvas(stage, { scale: 2, useCORS: true, backgroundColor: null });
-        const url = canvas.toDataURL('image/png'); const link = document.createElement('a'); link.href = url; link.download = `${(fileName.value || 'my-design').trim() || 'my-design'}.png`; link.click();
-      } catch { alert('PNG 저장 중 오류가 발생했습니다.'); }
-      finally {
-        if (prevBox) prevBox.classList.add('active'); if (prevImage) prevImage.classList.add('active');
-        saveBtn.disabled = false; saveBtn.textContent = 'PNG 저장';
-      }
+      // 카드 HTML 조립
+      const searchKwd = `${item['프로그램']} ${item['관리자']} ${cat}`.toLowerCase();
+      cardsHTML += `
+        <article class="card" data-search="${searchKwd}">
+          <div class="card-head"><div class="product">${item['프로그램']}</div><span class="tag">${item['태그']||cat}</span></div>
+          <div class="grid">
+            <div class="item"><div class="k">플랜</div><div class="v">${item['플랜']}</div></div>
+            <div class="item"><div class="k">보유 좌석</div><div class="v">${item['보유좌석']}</div></div>
+            <div class="item"><div class="k">관리자</div><div class="v">${item['관리자']}</div></div>
+            <div class="item"><div class="k">결제 카드</div><div class="v">${item['결제카드']}</div></div>
+            <div class="item"><div class="k">결제일</div><div class="v">${item['결제일']}</div></div>
+            <div class="item"><div class="k">비용 / 비고</div><div class="v">${item['비용및비고']}</div></div>
+          </div>
+          <div class="item" style="margin-top:14px"><div class="k">사용자</div><div class="people">${peopleHTML}</div></div>
+        </article>
+      `;
     });
 
-    setStageSize(1280, 720);
-    highlightOpacityValue.textContent = `${highlightOpacity.value}%`;
-    imageOpacityValue.textContent = `${imageOpacity.value}%`;
-    imageRadiusValue.textContent = `${imageRadius.value}px`;
-    buildSwatches(); buildFontSizePresets(); loadSavedFonts(); createBox(); syncToolbarFromBox(); updateImageButtonStates();
-  </script>
+    container.insertAdjacentHTML('beforeend', `
+      <div class="section searchable">
+        <div class="section-title"><h2>${cat}</h2></div>
+        <div class="cards">${cardsHTML}</div>
+      </div>
+    `);
+  }
+
+  // 3. 사용자 현황 표 렌더링
+  container.insertAdjacentHTML('beforeend', `
+    <div class="section searchable">
+      <div class="section-title"><h2>사용자 / 계정 현황</h2><span>자동 취합된 전체 사용자 목록</span></div>
+      <table>
+        <thead><tr><th>프로그램</th><th>사용자</th><th>부서</th><th>권한</th><th>상태</th></tr></thead>
+        <tbody>${userTableRows}</tbody>
+      </table>
+      <div class="notice">⚠️ 이 페이지에는 실제 카드번호 전체, 비밀번호, API Key 등 민감한 개인정보를 입력하지 마세요.</div>
+    </div>
+  `);
+
+  // 4. 상단 통계 숫자 업데이트
+  document.getElementById('stat-prog').innerText = data.length;
+  document.getElementById('stat-seat').innerText = totalSeats;
+  document.getElementById('stat-card').innerText = cardSet.size;
+  document.getElementById('stat-user').innerText = totalUsers;
+}
+
+// 5. 실시간 검색 기능 유지
+const search = document.getElementById('search');
+search.addEventListener('input', () => {
+  const q = search.value.toLowerCase().trim();
+  document.querySelectorAll('.searchable').forEach(section => {
+    const items = section.querySelectorAll('[data-search], tbody tr');
+    let hasVisibleItem = false;
+    items.forEach(el => {
+      const text = (el.dataset.search || el.innerText || '').toLowerCase();
+      const match = !q || text.includes(q);
+      el.style.display = match ? '' : 'none';
+      if(match) hasVisibleItem = true;
+    });
+    // 검색 결과가 없는 섹션은 제목도 숨김
+    section.style.display = hasVisibleItem || !q ? '' : 'none';
+  });
+});
+</script>
 </body>
 </html>
