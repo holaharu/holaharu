@@ -3,7 +3,7 @@
 여행용 Apps Script 프로젝트와 새 Google Sheets를 사용한다. 기존 월별가계부는 수정하지 않는다.
 
 - Code.gs, Index.html, appsscript.json을 별도 Apps Script 프로젝트에 넣는다.
-- 나영의 Google 계정으로 setupTravel을 실행한다. 로그인 계정을 소유자로 등록하고 ingansan12@gmail.com에 새 저장 시트의 편집 권한을 부여한다.
+- 나영의 Google 계정으로 setupTravel을 실행한다. 두 계정을 허용 계정으로 등록하고 이미 공유된 여행 저장 시트를 연결한다. Drive 전체 접근 권한은 요청하지 않는다.
 - 웹 앱을 **접속한 사용자로 실행**, **Google 계정 사용자 접근**으로 배포한다. 사용자별 최초 Google 승인이 필요하다.
 - 완료된 /exec URL을 여행용 GitHub 페이지의 공동 저장 진입 링크로 연결한다. 실제 URL이 발급되기 전에는 연결 완료로 표시하지 않는다.
 
@@ -17,3 +17,6 @@
 편집자: ingansan12@gmail.com
 
 setupTravel은 이 시트를 연결하며 새로운 시트를 만들지 않는다.
+
+여행 전용 Apps Script 프로젝트 생성 및 코드 입력 완료. Google 휴대전화 본인 확인 및 최초 권한 승인이 남아 있다.
+프로젝트: https://script.google.com/home/projects/1fWeAYbI6vio1Hw8BgPHRGfLQzhNBUNyG-c4Iry9X23E17wH8uRPh9Uxn/edit

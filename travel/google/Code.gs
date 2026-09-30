@@ -7,8 +7,7 @@ function setupTravel(){
  if(owner!==TRAVEL_OWNER_EMAIL)throw Error('나영의 Google 계정으로 실행해주세요.');
  if(p.getProperty('TRAVEL_SHEET_ID')){if(owner!==p.getProperty('TRAVEL_OWNER'))throw Error('소유자만 설정 가능합니다.');return SpreadsheetApp.openById(p.getProperty('TRAVEL_SHEET_ID')).getUrl()}
  const ss=SpreadsheetApp.openById(TRAVEL_EXISTING_SHEET_ID);if(!ss.getSheetByName('여행저장'))throw Error('여행저장 시트를 확인해주세요.');
- // 공유가 성공한 뒤에만 저장소 ID를 활성화합니다.
- DriveApp.getFileById(ss.getId()).addEditor(TRAVEL_PARTNER_EMAIL);
+ // 두 계정에 이미 공유된 여행 전용 저장소를 사용합니다.
  p.setProperties({TRAVEL_SHEET_ID:ss.getId(),TRAVEL_OWNER:owner,TRAVEL_ACCOUNTS:JSON.stringify([owner,TRAVEL_PARTNER_EMAIL])});return ss.getUrl();
 }
 function travelUser_(){const p=PropertiesService.getScriptProperties(),email=Session.getActiveUser().getEmail().toLowerCase(),allowed=JSON.parse(p.getProperty('TRAVEL_ACCOUNTS')||'[]');if(!email||!allowed.includes(email))throw Error('등록된 두 Google 계정으로 로그인해주세요.');return email}
