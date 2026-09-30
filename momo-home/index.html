@@ -1,18 +1,87 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>모모네 집</title>
-<style>
-html,body{margin:0;min-height:100%;background:#f7f0df}body{display:grid;place-items:center;font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}.stage{position:relative;width:min(100vw,1648px);line-height:0}.stage>img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}.hotspot{position:absolute;display:block;z-index:2;border-radius:7%;cursor:pointer;-webkit-tap-highlight-color:transparent}.hotspot:focus-visible{outline:4px solid rgba(255,255,255,.95);outline-offset:-4px}.file-zone{left:10.5%;top:14%;width:40.5%;height:40.5%}.ledger-zone{left:54%;top:8%;width:36.5%;height:46.5%}@media(hover:hover){.hotspot:hover{background:rgba(255,255,255,.05)}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>모모네 집</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #f5f0e6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 16 / 9;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .bg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* 클릭 영역 공통 스타일 */
+    .clickable-area {
+      position: absolute;
+      cursor: pointer;
+      border-radius: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      text-decoration: none;
+    }
+    /* 마우스 올렸을 때 반짝이는 효과 */
+    .clickable-area:hover {
+      transform: scale(1.03);
+      background-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+
+    /* 좌측: 파일정리 (당근밭 표지판) */
+    .link-file {
+      top: 22%;
+      left: 19%;
+      width: 28%;
+      height: 28%;
+    }
+
+    /* 우측: 월별가계부 (사과나무 표지판) */
+    .link-household {
+      top: 22%;
+      left: 53%;
+      width: 28%;
+      height: 28%;
+    }
+  </style>
 </head>
 <body>
-<main class="stage" aria-label="모모네 집 바로가기">
-  <img src="../momo-household/momo-main-v2.png" alt="모모네 집 정원. 왼쪽은 파일정리 당근밭, 오른쪽은 월별가계부 사과나무 밭, 아래 여행정리는 준비 중입니다." />
-  <a class="hotspot file-zone" href="https://holaharu.github.io/holaharu/momo-household/" aria-label="파일정리로 이동" title="파일정리"></a>
-  <a class="hotspot ledger-zone" href="https://script.google.com/macros/s/AKfycbz5YzkvmMvAzPvbV-YOwo0FLwXb7m3hsymJ8yCqXvCS71XnRXiC8ZnzNHFR4dZeDioZYQ/exec" aria-label="월별가계부로 이동" title="월별가계부"></a>
-</main>
+
+  <div class="container">
+    <!-- 대문 배경 이미지 -->
+    <img src="momo_bg.png" alt="모모네 집 대문" class="bg-img">
+
+    <!-- 당근밭 표지판 ➔ 파일정리 링크 (구글 스크립트) -->
+    <a href="https://script.google.com/macros/s/AKfycbz5YzkvmMvAzPvbV-YOwo0FLwXb7m3hsymJ8yCqXvCS71XnRXiC8ZnzNHFR4dZeDioZYQ/exec" 
+       class="clickable-area link-file" 
+       title="파일정리 바로가기"
+       target="_blank"></a>
+
+    <!-- 사과나무 표지판 ➔ 월별가계부 링크 -->
+    <a href="https://holaharu.github.io/holaharu/momo-household/" 
+       class="clickable-area link-household" 
+       title="월별가계부 바로가기"></a>
+  </div>
+
 </body>
 </html>
