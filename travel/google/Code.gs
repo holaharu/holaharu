@@ -1,10 +1,12 @@
 // 별도 여행가계부 프로젝트에서만 사용. 기존 월별가계부의 시트/프로젝트는 사용하지 않습니다.
 const TRAVEL_PARTNER_EMAIL='ingansan12@gmail.com';
+const TRAVEL_EXISTING_SHEET_ID='1vD4Q22W6GnJfMHol5GfB6IRlz82lqcP1sPcOovG5Qgs';
+const TRAVEL_OWNER_EMAIL='momothebestdog@gmail.com';
 function setupTravel(){
  const p=PropertiesService.getScriptProperties(),owner=Session.getEffectiveUser().getEmail().toLowerCase();
- if(!owner)throw Error('소유자의 Google 계정으로 실행해주세요.');
+ if(owner!==TRAVEL_OWNER_EMAIL)throw Error('나영의 Google 계정으로 실행해주세요.');
  if(p.getProperty('TRAVEL_SHEET_ID')){if(owner!==p.getProperty('TRAVEL_OWNER'))throw Error('소유자만 설정 가능합니다.');return SpreadsheetApp.openById(p.getProperty('TRAVEL_SHEET_ID')).getUrl()}
- const ss=SpreadsheetApp.create('우리의 여행 가계부 · 공동 저장');const sheet=ss.getSheets()[0];sheet.setName('여행저장');sheet.appendRow(['여행ID','버전','저장계정','수정시각','조각번호','여행데이터','총조각수']);
+ const ss=SpreadsheetApp.openById(TRAVEL_EXISTING_SHEET_ID);if(!ss.getSheetByName('여행저장'))throw Error('여행저장 시트를 확인해주세요.');
  // 공유가 성공한 뒤에만 저장소 ID를 활성화합니다.
  DriveApp.getFileById(ss.getId()).addEditor(TRAVEL_PARTNER_EMAIL);
  p.setProperties({TRAVEL_SHEET_ID:ss.getId(),TRAVEL_OWNER:owner,TRAVEL_ACCOUNTS:JSON.stringify([owner,TRAVEL_PARTNER_EMAIL])});return ss.getUrl();
