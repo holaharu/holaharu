@@ -48,6 +48,9 @@
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
     }
 
+    .clickable-area:focus-visible { outline: 4px solid #e2b52b; background: rgba(255,255,255,.25); }
+    .link-travel { top: 47%; left: 33%; width: 34%; height: 22%; }
+
     /* 좌측: 파일정리 (당근밭 표지판) */
     .link-file {
       top: 22%;
@@ -69,18 +72,21 @@
 
   <div class="container">
     <!-- 대문 배경 이미지 -->
-    <img src="momo_bg.png" alt="모모네 집 대문" class="bg-img">
+    <img src="momo-bg-travel-v2.jpg" alt="모모네 집: 파일정리 당근밭, 월별가계부 사과나무, 여행 노란 꽃 화단" class="bg-img">
 
 <!-- 당근밭 표지판 (왼쪽) -->
     <a href="https://holaharu.github.io/holaharu/momo-household/" 
        class="clickable-area link-file" 
-       title="파일정리 바로가기"></a>
+       title="파일정리 바로가기" aria-label="파일정리 바로가기"></a>
 
     <!-- 사과나무 표지판 (오른쪽) -->
     <a href="https://script.google.com/macros/s/AKfycbz5YzkvmMvAzPvbV-YOwo0FLwXb7m3hsymJ8yCqXvCS71XnRXiC8ZnzNHFR4dZeDioZYQ/exec" 
        class="clickable-area link-household" 
-       title="월별가계부 바로가기"
-       target="_blank"></a>
+       title="월별가계부 바로가기" aria-label="월별가계부 바로가기"
+       target="_blank" rel="noopener noreferrer"></a>
+    <a href="https://script.google.com/macros/s/AKfycbyJMMOKjcYxdfPxaoNVI4MQ4rZjO_NShdOp9vscdqkaAdYM3JT-7L1gRsmqA7paXcyw/exec" class="clickable-area link-travel"
+       title="여행 바로가기" aria-label="여행 바로가기"
+       target="_blank" rel="noopener noreferrer"></a>
   </div>
 
 </body>
