@@ -4,7 +4,7 @@ const uid=()=>crypto.randomUUID(),num=v=>{const n=Number(String(v??'').replace(/
 let db={trips:[]},active=null,pending=null,editId=null;
 try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.trips))db=v;}catch(e){$('status').textContent='저장 자료를 읽지 못했습니다. 백업 파일로 복구해주세요.'}
 function status(s){$('status').textContent=s}function current(){return db.trips.find(t=>t.id===active)}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(db));status('이 브라우저에 저장됨 · '+new Date().toLocaleTimeString('ko-KR'));return true}catch(e){status('저장 실패: 저장 공간이나 브라우저 설정을 확인하고 백업을 내려받아주세요.');return false}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(db));if(window.TravelCloud?.enabled){TravelCloud.queue(current());return true}status('이 브라우저에 저장됨 · '+new Date().toLocaleTimeString('ko-KR'));return true}catch(e){status('저장 실패: 저장 공간이나 브라우저 설정을 확인하고 백업을 내려받아주세요.');return false}}
 function blank(){return {id:uid(),destination:'',start:'',end:'',currency:'JPY',rate:null,entries:[],source:''}}
 function krw(e,t){if(e.currency==='KRW')return e.amount;if(Number.isFinite(e.krw))return e.krw;return t.rate?Math.round(e.amount*t.rate):null}
 function isSaleSelected(e){return e.saleSelected??!!e.sold}
