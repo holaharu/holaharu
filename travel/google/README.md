@@ -9,14 +9,13 @@
 
 두 계정의 이메일을 서버에서 검사한다. 익명 접근과 다른 계정의 모든 읽기/쓰기를 차단한다. 여행별 버전을 검사해 다른 사람의 수정 내용을 덮어쓰지 않는다. 실패한 수정은 브라우저에 남기고 저장 완료로 표시하지 않는다.
 
-현재 상태: 저장 시트 생성 및 공유 완료. 웹 앱 배포와 GitHub 진입 링크 연결은 아직 미완료.
+현재 상태: 여행 전용 웹 앱 배포 및 나영 계정의 공동 저장 연결 확인 완료. 두 계정만 서버에서 읽기/쓰기 허용.
+
+웹 앱: https://script.google.com/macros/s/AKfycbyJMMOKjcYxdfPxaoNVI4MQ4rZjO_NShdOp9vscdqkaAdYM3JT-7L1gRsmqA7paXcyw/exec
 
 저장 시트: https://docs.google.com/spreadsheets/d/1vD4Q22W6GnJfMHol5GfB6IRlz82lqcP1sPcOovG5Qgs/edit
 
 소유자: momothebestdog@gmail.com
 편집자: ingansan12@gmail.com
 
-setupTravel은 이 시트를 연결하며 새로운 시트를 만들지 않는다.
-
-여행 전용 Apps Script 프로젝트 생성 및 코드 입력 완료. Google 휴대전화 본인 확인 및 최초 권한 승인이 남아 있다.
-프로젝트: https://script.google.com/home/projects/1fWeAYbI6vio1Hw8BgPHRGfLQzhNBUNyG-c4Iry9X23E17wH8uRPh9Uxn/edit
+기존 브라우저 기록이 없는 GitHub 방문자는 공동 저장 웹 앱으로 이동한다. 기존 기록이 있으면 백업 버튼과 공동 저장 진입 링크를 표시한다.
