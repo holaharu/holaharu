@@ -17,5 +17,8 @@ Unmodified Regular and Bold OTF files from the user-supplied official font packa
 Official current distribution page: https://www.yspotlight.co.kr/download/font?tabNo=3
 The publisher states Y Pairing is free to use and redistribute. Web and program embedding are permitted by the supplied manual. Font modifications, renaming and standalone paid sale are prohibited. Original files are retained without conversion.
 
-## Pending Mona
-The supplied Mona link currently points to DeltaDotumKR. No unrelated font is substituted.
+## Mona
+Copyright (c) 2025 Monad ABXY. Reserved Font Name: Mona.
+Source: https://github.com/MonadABXY/mona-font
+Unmodified Mona12 and Mona12 Bold WOFF2 files. See MONA-LICENSE.txt (SIL OFL 1.1).
+Includes upstream third-party notices in mona-licenses/ and credits in MONA-UPSTREAM-README.md.
