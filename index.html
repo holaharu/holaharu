@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>간단 텍스트 편집기 v7</title>
+  <title>간단 텍스트 편집기 v8</title>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style id="dynamicFontStyle">
     @font-face {
@@ -13,6 +13,13 @@
       font-style: normal;
       font-display: swap;
     }
+    @font-face { font-family: 'Galmuri11'; src: url('./fonts/Galmuri11.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Galmuri9'; src: url('./fonts/Galmuri9.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Galmuri14'; src: url('./fonts/Galmuri14.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'DeltaDotumKR'; src: url('./fonts/DeltaDotumKR.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'YPairingFont'; src: url('./fonts/YPairingFont-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Galmuri11'; src: url('./fonts/Galmuri11-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+    @font-face { font-family: 'YPairingFont'; src: url('./fonts/YPairingFont-Bold.otf') format('opentype'); font-weight: 700; font-display: swap; }
   </style>
   <style>
     * { box-sizing: border-box; }
@@ -205,7 +212,7 @@
             <input type="text" id="webFontUrl" placeholder="https://example.com/font.woff2" />
           </div>
           <button class="btn secondary" id="addWebFontBtn" type="button">웹폰트 URL 추가</button>
-          <div class="meta">추가한 폰트 목록은 자동 저장됩니다.</div>
+          <div class="meta">위 기본 폰트는 편집기에 포함되어 있습니다. 여기서 직접 추가한 폰트는 현재 브라우저에만 저장됩니다.</div>
           <div class="font-saved-list" id="savedFontList"></div>
         </details>
 
@@ -236,6 +243,11 @@
     const FONT_SIZE_PRESETS = [12, 15, 18, 20, 24, 28, 32, 40];
     const BUILTIN_FONTS = [
       { label: '강원교육모두체', value: "'GangwonEducationModuche', Arial, sans-serif" },
+      { label: '갈무리 11', value: "'Galmuri11', Arial, sans-serif" },
+      { label: '갈무리 9', value: "'Galmuri9', Arial, sans-serif" },
+      { label: '갈무리 14', value: "'Galmuri14', Arial, sans-serif" },
+      { label: '델타돋움', value: "'DeltaDotumKR', Arial, sans-serif" },
+      { label: 'Y페어링체', value: "'YPairingFont', Arial, sans-serif" },
       { label: '기본 고딕', value: "'Apple SD Gothic Neo','Malgun Gothic',sans-serif" },
       { label: '세리프', value: "Georgia, 'Times New Roman', serif" }
     ];
@@ -644,6 +656,8 @@
       document.querySelectorAll('.text-box,.image-box').forEach(el => el.classList.remove('active'));
       saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
       try {
+        await document.fonts.ready;
+        document.querySelectorAll('.text-box').forEach(box => autoFitBox(box));
         const canvas = await html2canvas(stage, { scale: 2, useCORS: true, backgroundColor: null });
         const url = canvas.toDataURL('image/png'); const link = document.createElement('a'); link.href = url; link.download = `${(fileName.value || 'my-design').trim() || 'my-design'}.png`; link.click();
       } catch { alert('PNG 저장 중 오류가 발생했습니다.'); }
@@ -661,3 +675,4 @@
   </script>
 </body>
 </html>
+
