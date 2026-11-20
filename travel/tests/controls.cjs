@@ -1,0 +1,18 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const app=fs.readFileSync('travel/app.js','utf8'),server=fs.readFileSync('travel/google/Code.gs','utf8');
+let id=0;const c={uid:()=>`extra-${++id}`,productRows:e=>e.items?.length?e.items:[e]};vm.createContext(c);
+vm.runInContext(app.slice(app.indexOf('function krw('),app.indexOf('function append(')),c);
+vm.runInContext(server.slice(server.indexOf('function validateTravel_('),server.indexOf('function saveTravel(')),c);
+const unit=(id,name='상품',amount=1000)=>({id,name,store:'테스트 매장',date:'2026-11-20',category:'쇼핑',currency:'KRW',amount,sold:false,sale:0,saleSelected:true});
+const trip=entries=>({id:'test-trip',destination:'검증',start:'2026-11-20',end:'2026-11-21',currency:'KRW',rate:1,entries});
+const t=trip([unit('a'),unit('b'),unit('c')]);let groups=c.inventoryGroups(t);assert.equal(groups.length,1);assert.equal(groups[0].rows.length,3);
+c.sellGroup(groups[0],1,1500);let state=c.groupState(groups[0],t);assert.equal(state.sold,1);assert.equal(state.remaining,2);assert.equal(state.recovered,1500);assert.equal(c.sums(t).total,3000);assert.equal(c.sums(t).recovery,1500);
+c.sellGroup(groups[0],2,2001);assert.equal(c.groupState(groups[0],t).recovered,3501);assert.throws(()=>c.sellGroup(groups[0],1,1));
+const extra=c.saveOtherIncome(t,{name:'추가 정산금',date:'2026-11-20',amount:500});assert.equal(c.sums(t).total,3000);assert.equal(c.sums(t).recovery,4001);assert.equal(c.inventoryGroups(t).length,2);
+c.saveOtherIncome(t,{name:'수정 정산금',date:'2026-11-20',amount:700},extra.id);assert.equal(c.sums(t).recovery,4201);assert.throws(()=>c.saveOtherIncome(t,{name:'',date:'2026-11-20',amount:1}));assert.throws(()=>c.saveOtherIncome(t,{name:'x',date:'2026-11-20',amount:-1}));
+const restored=JSON.parse(c.validateTravel_(t));assert.equal(c.groupState(c.inventoryGroups(restored)[0],restored).sold,3);assert.equal(c.sums(restored).recovery,4201);
+assert.equal(c.removeTravelEntry(restored,extra.id),true);assert.equal(c.sums(restored).recovery,3501);assert.equal(c.removeTravelEntry(restored,'missing'),false);
+const nested=trip([{id:'receipt',date:'2026-11-20',category:'쇼핑',store:'영수증',currency:'JPY',amount:300,krw:3000,items:[{...unit('x','상품 1/3',100),currency:'JPY'},{...unit('y','상품 2/3',100),currency:'JPY'},{...unit('z','상품 3/3',100),currency:'JPY'}]}]);
+groups=c.inventoryGroups(nested);assert.equal(groups.length,1);assert.equal(groups[0].name,'상품');c.sellGroup(groups[0],1,1200);assert.equal(c.sums(nested).recovery,1200);c.removeTravelEntry(nested,'x');assert.equal(nested.entries[0].amount,200);assert.equal(nested.entries[0].krw,2000);assert.equal(c.sums(nested).recovery,0);c.removeTravelEntry(nested,'y');c.removeTravelEntry(nested,'z');assert.equal(nested.entries.length,0);
+const separate=trip([{...unit('d'),purchaseBatch:'batch1'},{...unit('e'),purchaseBatch:'batch2'}]);assert.equal(c.inventoryGroups(separate).length,2);
+console.log('PASS: grouped quantity, partial sales, remaining counts, recovery totals, independent income, server-compatible save roundtrip, nested and top-level deletion');
