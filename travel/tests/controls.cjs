@@ -16,3 +16,13 @@ const nested=trip([{id:'receipt',date:'2026-11-20',category:'쇼핑',store:'영�
 groups=c.inventoryGroups(nested);assert.equal(groups.length,1);assert.equal(groups[0].name,'상품');c.sellGroup(groups[0],1,1200);assert.equal(c.sums(nested).recovery,1200);c.removeTravelEntry(nested,'x');assert.equal(nested.entries[0].amount,200);assert.equal(nested.entries[0].krw,2000);assert.equal(c.sums(nested).recovery,0);c.removeTravelEntry(nested,'y');c.removeTravelEntry(nested,'z');assert.equal(nested.entries.length,0);
 const separate=trip([{...unit('d'),purchaseBatch:'batch1'},{...unit('e'),purchaseBatch:'batch2'}]);assert.equal(c.inventoryGroups(separate).length,2);
 console.log('PASS: grouped quantity, partial sales, remaining counts, recovery totals, independent income, server-compatible save roundtrip, nested and top-level deletion');
+const editTrip=trip([unit('edit1'),unit('edit2'),unit('edit3')]);let eg=c.inventoryGroups(editTrip)[0];c.sellGroup(eg,1,1500);
+const values={date:'2026-11-20',category:'쇼핑',store:'테스트 매장',name:'상품',currency:'KRW',amount:3000};
+c.updatePurchaseGroup(editTrip,eg.rows.map(e=>e.id),values,5);eg=c.inventoryGroups(editTrip)[0];assert.equal(eg.rows.length,5);assert.equal(c.groupState(eg,editTrip).sold,1);assert.equal(c.sums(editTrip).recovery,1500);assert.equal(c.sums(editTrip).total,3000);
+c.updatePurchaseGroup(editTrip,eg.rows.map(e=>e.id),values,1);eg=c.inventoryGroups(editTrip)[0];assert.equal(eg.rows.length,1);assert.equal(eg.rows[0].id,'edit1');assert.equal(eg.rows[0].sale,1500);
+const unchanged=JSON.stringify(editTrip);assert.throws(()=>c.updatePurchaseGroup(editTrip,[eg.rows[0].id],values,0));assert.equal(JSON.stringify(editTrip),unchanged);
+c.updatePurchaseGroup(editTrip,[eg.rows[0].id],{...values,amount:5000},3);assert.equal(c.inventoryGroups(editTrip)[0].rows.length,3);assert.equal(c.sums(editTrip).recovery,1500);
+const receiptEdit=trip([{id:'r',category:'쇼핑',currency:'JPY',amount:200,krw:2000,items:[{...unit('r1','x',100),currency:'JPY',krw:1000},{...unit('r2','x',100),currency:'JPY',krw:1000}]}]);
+c.updatePurchaseGroup(receiptEdit,['r1','r2'],{...values,name:'x',currency:'JPY',amount:300},3);assert.equal(receiptEdit.entries[0].amount,300);assert.equal(receiptEdit.entries[0].krw,3000);assert.equal(receiptEdit.entries[0].items.length,3);assert.equal(c.inventoryGroups(receiptEdit).length,1);
+const meal=trip([{...unit('meal'),category:'식사'}]);c.updatePurchaseGroup(meal,['meal'],{...values,category:'식사',amount:12000},4);assert.equal(meal.entries[0].quantity,4);assert.equal(c.sums(meal).total,12000);
+console.log('PASS: editable purchase quantity, sold units preserved, single-to-multiple changes, receipt totals, expense quantity');
